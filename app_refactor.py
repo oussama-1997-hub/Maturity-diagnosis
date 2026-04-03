@@ -657,12 +657,14 @@ def render_application_tab(
     fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), height=650)
     st.plotly_chart(fig, use_container_width=True)
 
-    gaps = (entreprise[selected_features] - cluster_means.loc[next_cluster]).sort_values()
+    entreprise_scores = pd.to_numeric(entreprise[selected_features], errors="coerce")
+    target_scores = pd.to_numeric(cluster_means.loc[next_cluster][selected_features], errors="coerce")
+    gaps = (entreprise_scores - target_scores).dropna().sort_values()
     negative_gaps = gaps[gaps < 0]
     gap_df = pd.DataFrame(
         {
             "Sous-dimension": negative_gaps.index,
-            "Écart": np.round(negative_gaps.values, 2),
+            "Écart": negative_gaps.round(2).values,
             "Priorité": ["Élevée" if x <= -1 else "Moyenne" if x <= -0.5 else "Faible" for x in negative_gaps.values],
         }
     )
