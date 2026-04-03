@@ -176,11 +176,19 @@ def render_hero() -> None:
         """
         <style>
         .main .block-container {
-            max-width: 100%;
+            max-width: none !important;
+            width: 100% !important;
             padding-top: 1rem;
             padding-left: 2.2rem;
             padding-right: 2.2rem;
             padding-bottom: 2rem;
+        }
+        [data-testid="stAppViewContainer"] .main {
+            width: 100%;
+            max-width: 100%;
+        }
+        [data-testid="stHorizontalBlock"] {
+            align-items: stretch;
         }
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #f8fbfc 0%, #eef4f6 100%);
@@ -866,31 +874,31 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
     )
     importances = pd.Series(clf.feature_importances_, index=X.columns)
     top_importances = importances[importances > 0].sort_values(ascending=False).head(12)
-
-    left, right = st.columns([0.9, 1.1])
-    with left:
-        st.markdown("### Feature importances")
-        if top_importances.empty:
-            st.info("No non-zero feature importances were found for the current decision-tree configuration.")
-        else:
-            fig, ax = plt.subplots(figsize=(8, 6))
-            top_importances.sort_values().plot(kind="barh", ax=ax, color="steelblue")
-            ax.set_title("Top decision-tree drivers")
-            st.pyplot(fig)
-    with right:
-        st.markdown("### Decision tree figure")
-        fig, ax = plt.subplots(figsize=(28, 14))
-        plot_tree(
-            clf,
-            feature_names=list(X.columns),
-            class_names=[str(c) for c in clf.classes_],
-            filled=True,
-            rounded=True,
-            fontsize=8,
-            ax=ax,
-        )
-        ax.set_title("Decision tree classification", fontsize=16)
+    st.markdown("### 🔎 Feature Importances")
+    if top_importances.empty:
+        st.info("No non-zero feature importances were found for the current decision-tree configuration.")
+    else:
+        fig, ax = plt.subplots(figsize=(10, 6))
+        top_importances.sort_values().plot(kind="barh", ax=ax, color="steelblue")
+        ax.set_title("Top decision-tree drivers")
         st.pyplot(fig, use_container_width=True)
+
+    st.markdown("### 🎯 Decision Tree Visualization")
+    fig, ax = plt.subplots(figsize=(34, 18))
+    plot_tree(
+        clf,
+        feature_names=list(X.columns),
+        class_names=[str(c) for c in clf.classes_],
+        filled=True,
+        rounded=True,
+        fontsize=10,
+        impurity=False,
+        proportion=True,
+        precision=2,
+        ax=ax,
+    )
+    ax.set_title("Decision tree classification", fontsize=18)
+    st.pyplot(fig, use_container_width=True)
 
 
 def render_application_tab(
@@ -973,16 +981,18 @@ def render_application_tab(
         """,
         unsafe_allow_html=True,
     )
-    st.markdown("### Guided interpretation")
+    st.markdown("## 🧭 Guide d’utilisation personnalisé")
     st.markdown(
         """
-        1. Identify the company scenario and validate whether the priority is technological, organizational, or balanced.
-        2. Read the company-versus-target-cluster radar charts to see where the largest maturity gaps appear.
-        3. Use the organizational roadmap table and the Lean/technology adoption tables together.
-        4. Execute the roadmap in the order recommended by the scenario.
+        1. Identification du scénario d’adoption de l’entreprise.
+        2. Lecture des écarts par rapport au cluster cible via les radars et les tableaux d’écart.
+        3. Génération de deux feuilles de route complémentaires :
+        - feuille de route organisationnelle Lean 4.0
+        - feuille de route technologique et méthodes Lean
+        4. Priorisation et exécution progressive selon le scénario détecté.
         """
     )
-    st.markdown("### Scenario recommendations")
+    st.markdown("## 🔍 Analyse comparative et recommandations")
     for idx, recommendation in enumerate(scenario["recommendations"], start=1):
         st.write(f"{idx}. {recommendation}")
 
@@ -1058,9 +1068,9 @@ def render_application_tab(
             "Priority": [priority_from_gap(x) for x in negative_gaps.values],
         }
     )
-    st.markdown("### Personalized roadmap")
-    st.caption("This roadmap is split into two parts: an organizational maturity roadmap and a technological adoption roadmap.")
-    st.markdown("#### 1. Organizational maturity roadmap")
+    st.markdown("### 🗺️ Feuille de route personnalisée")
+    st.caption("Cette feuille de route est structurée en deux volets : organisationnel et technologique.")
+    st.markdown("#### 🔻 Sous-dimensions avec un écart négatif (priorité d'amélioration)")
     st.dataframe(gap_df, use_container_width=True)
 
     lean_cluster_mean = df_clustered.loc[df_clustered["cluster"] == next_cluster, lean_cols].mean()
@@ -1070,7 +1080,7 @@ def render_application_tab(
 
     roadmap_col, tech_col = st.columns(2)
     with roadmap_col:
-        st.markdown("#### 2. Technological roadmap: Lean methods to adopt")
+        st.markdown("#### 🛠️ Feuille de route technologique : Méthodes Lean à adopter")
         lean_df = pd.DataFrame(
             {
                 "Lean method": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
@@ -1082,7 +1092,7 @@ def render_application_tab(
         st.dataframe(lean_df if not lean_df.empty else pd.DataFrame({"Info": ["No priority Lean method to adopt."]}), use_container_width=True)
 
     with tech_col:
-        st.markdown("#### 2. Technological roadmap: Industry 4.0 technologies to adopt")
+        st.markdown("#### 🤖 Feuille de route technologique : Technologies Industrie 4.0 à adopter")
         tech_df = pd.DataFrame(
             {
                 "Technology": [col.replace("Tech_", "") for col in tech_to_adopt.index],
@@ -1100,7 +1110,7 @@ def render_application_tab(
     if not tech_df.empty:
         executive_lines.append(f"Top technology adoption priorities: {', '.join(tech_df['Technology'].head(3).tolist())}.")
     if executive_lines:
-        st.markdown("#### Executive summary")
+        st.markdown("#### 🎯 Synthèse exécutive")
         for line in executive_lines:
             st.write(f"- {line}")
 
