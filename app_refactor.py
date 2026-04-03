@@ -1336,6 +1336,14 @@ def main() -> None:
     kmeans = KMeans(n_clusters=sidebar["final_k"], random_state=42, n_init=10)
     aligned_df["cluster"] = kmeans.fit_predict(scaled_features)
 
+    selected_features = [col for col in selected_features if col in aligned_df.columns]
+    if not selected_features:
+        st.error("No valid sub-dimension columns are available in the active dataset after alignment.")
+        st.stop()
+    radar_features = [col for col in radar_features if col in selected_features]
+    if not radar_features:
+        radar_features = selected_features.copy()
+
     cluster_means = aligned_df.groupby("cluster")[selected_features].mean()
     cluster_label_map = rank_cluster_labels(cluster_means)
     aligned_df["Niveau de maturitÃ© Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
