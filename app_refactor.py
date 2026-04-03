@@ -884,7 +884,8 @@ def render_pca_tab(df_clustered: pd.DataFrame, scaled_features: np.ndarray) -> N
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(scaled_features)
     df_pca = pd.DataFrame(pca_result, columns=["PCA1", "PCA2"])
-    df_pca["label"] = df_clustered.loc[df_pca.index, "Niveau de maturité Lean 4.0"].values
+    maturity_col = "Niveau de maturité Lean 4.0" if "Niveau de maturité Lean 4.0" in df_clustered.columns else "Niveau de maturitÃ© Lean 4.0"
+    df_pca["label"] = df_clustered.loc[df_pca.index, maturity_col].values
     fig, ax = plt.subplots()
     sns.scatterplot(data=df_pca, x="PCA1", y="PCA2", hue="label", palette="Set2", ax=ax)
     ax.set_title("PCA des clusters")
@@ -897,7 +898,8 @@ def render_radar_tab(df_clustered: pd.DataFrame, radar_features: List[str]) -> N
         "Comparaison radar",
         "Comprenez les différences entre groupes de maturité au niveau des sous-dimensions et des dimensions pour soutenir une lecture claire côté management.",
     )
-    cluster_avg = df_clustered.groupby("Niveau de maturité Lean 4.0")[radar_features].mean().dropna(axis=1, how="any")
+    maturity_col = "Niveau de maturité Lean 4.0" if "Niveau de maturité Lean 4.0" in df_clustered.columns else "Niveau de maturitÃ© Lean 4.0"
+    cluster_avg = df_clustered.groupby(maturity_col)[radar_features].mean().dropna(axis=1, how="any")
     if cluster_avg.empty:
         st.warning("Pas de données disponibles pour le radar avec la sélection actuelle.")
         return
