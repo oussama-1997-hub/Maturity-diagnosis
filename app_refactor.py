@@ -952,7 +952,16 @@ def render_heatmaps_tab(df_clustered: pd.DataFrame, selected_features: List[str]
         "Heatmaps",
         "Compare maturity scores, Lean-method adoption, and Industry 4.0 technology usage across the cluster structure to identify the strongest operational patterns.",
     )
-    avg_scores = df_clustered.groupby("cluster")[selected_features].mean()
+    heatmap_features = df_clustered.filter(items=selected_features)
+    if heatmap_features.empty:
+        st.warning("No valid maturity columns are available for the heatmap.")
+        return
+
+    avg_scores = (
+        pd.concat([df_clustered[["cluster"]], heatmap_features], axis=1)
+        .groupby("cluster")
+        .mean(numeric_only=True)
+    )
     lean_cols = [col for col in df_clustered.columns if col.startswith("Lean_")]
     tech_cols = [col for col in df_clustered.columns if col.startswith("Tech_")]
     lean_avg = df_clustered.groupby("cluster")[lean_cols].mean() if lean_cols else pd.DataFrame()
@@ -1133,7 +1142,17 @@ def render_application_tab(
     for idx, recommendation in enumerate(scenario["recommendations"], start=1):
         st.write(f"{idx}. {recommendation}")
 
-    cluster_means = df_clustered.groupby("cluster")[selected_features].mean()
+    application_features = df_clustered.filter(items=selected_features)
+    selected_features = application_features.columns.tolist()
+    if not selected_features:
+        st.error("No valid sub-dimension columns are available for application analysis.")
+        st.stop()
+
+    cluster_means = (
+        pd.concat([df_clustered[["cluster"]], application_features], axis=1)
+        .groupby("cluster")
+        .mean(numeric_only=True)
+    )
     cluster_rank = cluster_means.mean(axis=1).sort_values().index.tolist()
     current_position = cluster_rank.index(predicted_cluster)
     next_cluster = cluster_rank[min(current_position + 1, len(cluster_rank) - 1)]
