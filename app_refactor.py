@@ -136,16 +136,31 @@ SCENARIO_TEXT = {
         "title": "Scenario 1: Technology lag",
         "icon": "🔧",
         "body": "The organizational maturity is stronger than the technology adoption. Prioritize the missing Lean tools and Industry 4.0 enablers used by the next maturity cluster.",
+        "recommendations": [
+            "Prioritize the technologies and Lean methods already used in the target maturity cluster but still absent in the company.",
+            "Use the decision-tree drivers as the first implementation levers toward a stronger maturity level.",
+            "Start with the technology roadmap, then consolidate the organizational maturity roadmap.",
+        ],
     },
     "org_lag": {
         "title": "Scenario 2: Organizational lag",
         "icon": "⚡",
         "body": "Technology adoption is ahead of organizational readiness. Focus on process discipline, leadership, and learning-system gaps before scaling more tools.",
+        "recommendations": [
+            "Prioritize the Lean 4.0 sub-dimensions with the largest negative gap against the target cluster.",
+            "Concentrate on leadership, operating routines, and organizational learning before adding complexity.",
+            "Start with the organizational maturity roadmap, then phase the technology roadmap back in.",
+        ],
     },
     "aligned": {
         "title": "Scenario 3: Strategic alignment",
         "icon": "🚀",
         "body": "Organizational maturity and technology adoption are aligned. Continue with balanced improvements and target the highest-impact decision-tree drivers.",
+        "recommendations": [
+            "Maintain a balanced improvement rhythm between maturity dimensions and technology adoption.",
+            "Use the most influential decision-tree drivers to identify the next strategic acceleration points.",
+            "Advance both the technology and maturity roadmaps in a coordinated way.",
+        ],
     },
 }
 
@@ -624,6 +639,41 @@ def determine_scenario(cluster_label: str, predicted_dt: str) -> str:
     return "aligned"
 
 
+def priority_from_gap(value: float) -> str:
+    if value <= -1.0:
+        return "High"
+    if value <= -0.5:
+        return "Medium"
+    return "Low"
+
+
+def priority_from_adoption(value: float) -> str:
+    if value >= 0.7:
+        return "High"
+    if value >= 0.4:
+        return "Medium"
+    return "Low"
+
+
+def build_dimension_comparison(entreprise: pd.Series, cluster_target: pd.Series, selected_features: List[str]) -> Tuple[Dict[str, float], Dict[str, float]]:
+    dimension_groups = {
+        "Leadership": [col for col in selected_features if "Leadership" in col],
+        "Operations": [col for col in selected_features if "Opérations" in col or "Operations" in col],
+        "Learning": [col for col in selected_features if "Organisation apprenante" in col],
+        "Technology": [col for col in selected_features if "Technologies" in col],
+        "Supply Chain": [col for col in selected_features if "Supply Chain" in col],
+    }
+
+    company_scores: Dict[str, float] = {}
+    target_scores: Dict[str, float] = {}
+    for dimension, cols in dimension_groups.items():
+        valid_cols = [col for col in cols if col in entreprise.index and col in cluster_target.index]
+        if valid_cols:
+            company_scores[dimension] = float(pd.to_numeric(entreprise[valid_cols], errors="coerce").mean())
+            target_scores[dimension] = float(pd.to_numeric(cluster_target[valid_cols], errors="coerce").mean())
+    return company_scores, target_scores
+
+
 def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labels: Dict[int, str]) -> None:
     render_section_intro(
         "Executive Snapshot",
@@ -879,8 +929,8 @@ def render_application_tab(
         st.markdown("### Company profile")
         info_1, info_2, info_3 = st.columns(3)
         info_1.metric("Company index", selected_company)
-        info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
-        info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
+        info_2.metric("Sector", entreprise.get("Secteur industriel", "N/A"))
+        info_3.metric("Size", entreprise.get("Taille entreprise ", "N/A"))
     else:
         entreprise = build_manual_company_input(df_clustered)
         if entreprise.empty:
@@ -889,8 +939,8 @@ def render_application_tab(
         st.markdown("### New company profile")
         info_1, info_2, info_3 = st.columns(3)
         info_1.metric("Company", company_label)
-        info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
-        info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
+        info_2.metric("Sector", entreprise.get("Secteur industriel", "N/A"))
+        info_3.metric("Size", entreprise.get("Taille entreprise ", "N/A"))
 
     st.markdown("### Maturity scores by sub-dimension")
     st.dataframe(company_dimension_table(entreprise, selected_features), use_container_width=True)
@@ -903,10 +953,10 @@ def render_application_tab(
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### Lean methods already adopted")
-        st.dataframe(pd.DataFrame({"Méthode Lean": lean_adopted or ["Aucune méthode détectée"]}), use_container_width=True)
+        st.dataframe(pd.DataFrame({"Lean method": lean_adopted or ["No Lean method detected"]}), use_container_width=True)
     with col2:
         st.markdown("### Industry 4.0 technologies already adopted")
-        st.dataframe(pd.DataFrame({"Technologie 4.0": tech_adopted or ["Aucune technologie détectée"]}), use_container_width=True)
+        st.dataframe(pd.DataFrame({"Technology 4.0": tech_adopted or ["No technology detected"]}), use_container_width=True)
 
     entreprise_scaled = scaler.transform(entreprise[selected_features].values.reshape(1, -1))
     predicted_cluster = int(kmeans.predict(entreprise_scaled)[0])
@@ -931,6 +981,18 @@ def render_application_tab(
         """,
         unsafe_allow_html=True,
     )
+    st.markdown("### Guided interpretation")
+    st.markdown(
+        """
+        1. Identify the company scenario and validate whether the priority is technological, organizational, or balanced.
+        2. Read the company-versus-target-cluster radar charts to see where the largest maturity gaps appear.
+        3. Use the organizational roadmap table and the Lean/technology adoption tables together.
+        4. Execute the roadmap in the order recommended by the scenario.
+        """
+    )
+    st.markdown("### Scenario recommendations")
+    for idx, recommendation in enumerate(scenario["recommendations"], start=1):
+        st.write(f"{idx}. {recommendation}")
 
     cluster_means = df_clustered.groupby("cluster")[selected_features].mean()
     cluster_rank = cluster_means.mean(axis=1).sort_values().index.tolist()
@@ -962,6 +1024,37 @@ def render_application_tab(
     fig.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), height=650)
     st.plotly_chart(fig, use_container_width=True)
 
+    st.markdown("### Company vs target cluster radar by dimension")
+    company_dim_scores, target_dim_scores = build_dimension_comparison(
+        entreprise,
+        cluster_means.loc[next_cluster],
+        selected_features,
+    )
+    if company_dim_scores and target_dim_scores:
+        fig_dim = go.Figure()
+        fig_dim.add_trace(
+            go.Scatterpolar(
+                r=list(company_dim_scores.values()),
+                theta=list(company_dim_scores.keys()),
+                fill="toself",
+                name="Entreprise",
+                line=dict(color="rgba(255, 0, 0, 1)", width=3),
+                fillcolor="rgba(255, 0, 0, 0.25)",
+            )
+        )
+        fig_dim.add_trace(
+            go.Scatterpolar(
+                r=list(target_dim_scores.values()),
+                theta=list(target_dim_scores.keys()),
+                fill="toself",
+                name="Cluster cible",
+                line=dict(color="rgba(0, 0, 139, 1)", width=3),
+                fillcolor="rgba(0, 0, 139, 0.2)",
+            )
+        )
+        fig_dim.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 5])), height=560)
+        st.plotly_chart(fig_dim, use_container_width=True)
+
     entreprise_scores = pd.to_numeric(entreprise[selected_features], errors="coerce")
     target_scores = pd.to_numeric(cluster_means.loc[next_cluster][selected_features], errors="coerce")
     gaps = (entreprise_scores - target_scores).dropna().sort_values()
@@ -969,11 +1062,13 @@ def render_application_tab(
     gap_df = pd.DataFrame(
         {
             "Sous-dimension": negative_gaps.index,
-            "Écart": negative_gaps.round(2).values,
-            "Priorité": ["Élevée" if x <= -1 else "Moyenne" if x <= -0.5 else "Faible" for x in negative_gaps.values],
+            "Gap": negative_gaps.round(2).values,
+            "Priority": [priority_from_gap(x) for x in negative_gaps.values],
         }
     )
-    st.markdown("### Improvement gaps")
+    st.markdown("### Personalized roadmap")
+    st.caption("This roadmap combines organizational maturity gaps with target-cluster adoption priorities.")
+    st.markdown("#### Organizational maturity roadmap")
     st.dataframe(gap_df, use_container_width=True)
 
     lean_cluster_mean = df_clustered.loc[df_clustered["cluster"] == next_cluster, lean_cols].mean()
@@ -983,26 +1078,39 @@ def render_application_tab(
 
     roadmap_col, tech_col = st.columns(2)
     with roadmap_col:
-        st.markdown("### Lean methods to adopt")
+        st.markdown("#### Lean methods to adopt")
         lean_df = pd.DataFrame(
             {
-                "Méthode Lean": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
+                "Lean method": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
                 "Technologies support": [LEAN_SUPPORT.get(LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")), "") for col in lean_to_adopt.index],
                 "Adoption rate in target cluster": lean_to_adopt.round(2).values,
+                "Priority": [priority_from_adoption(v) for v in lean_to_adopt.values],
             }
         )
-        st.dataframe(lean_df if not lean_df.empty else pd.DataFrame({"Info": ["Aucune méthode prioritaire à adopter."]}), use_container_width=True)
+        st.dataframe(lean_df if not lean_df.empty else pd.DataFrame({"Info": ["No priority Lean method to adopt."]}), use_container_width=True)
 
     with tech_col:
-        st.markdown("### Industry 4.0 technologies to adopt")
+        st.markdown("#### Industry 4.0 technologies to adopt")
         tech_df = pd.DataFrame(
             {
-                "Technologie": [col.replace("Tech_", "") for col in tech_to_adopt.index],
+                "Technology": [col.replace("Tech_", "") for col in tech_to_adopt.index],
                 "Adoption rate in target cluster": tech_to_adopt.round(2).values,
+                "Priority": [priority_from_adoption(v) for v in tech_to_adopt.values],
             }
         )
-        st.dataframe(tech_df if not tech_df.empty else pd.DataFrame({"Info": ["Aucune technologie prioritaire à adopter."]}), use_container_width=True)
+        st.dataframe(tech_df if not tech_df.empty else pd.DataFrame({"Info": ["No priority technology to adopt."]}), use_container_width=True)
 
+    executive_lines = []
+    if not gap_df.empty:
+        executive_lines.append(f"Top organizational priorities: {', '.join(gap_df['Sous-dimension'].head(3).tolist())}.")
+    if not lean_df.empty:
+        executive_lines.append(f"Top Lean adoption priorities: {', '.join(lean_df['Lean method'].head(3).tolist())}.")
+    if not tech_df.empty:
+        executive_lines.append(f"Top technology adoption priorities: {', '.join(tech_df['Technology'].head(3).tolist())}.")
+    if executive_lines:
+        st.markdown("#### Executive summary")
+        for line in executive_lines:
+            st.write(f"- {line}")
 
 def main() -> None:
     render_hero()
@@ -1087,3 +1195,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
