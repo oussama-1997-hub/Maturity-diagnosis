@@ -1,0 +1,16 @@
+streamlit
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+plotly
+graphviz
+fpdf
+kaleido
+pydotplus
+Pillow
+dtreeviz==1.4.0
+openpyxl
+xlrd
+streamlit[charts]
