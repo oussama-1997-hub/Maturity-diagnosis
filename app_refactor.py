@@ -154,6 +154,13 @@ def render_hero() -> None:
     st.markdown(
         """
         <style>
+        .main .block-container {
+            max-width: 100%;
+            padding-top: 1.2rem;
+            padding-left: 2rem;
+            padding-right: 2rem;
+            padding-bottom: 2rem;
+        }
         .hero-box {
             padding: 1.6rem 1.8rem;
             border-radius: 24px;
@@ -373,6 +380,71 @@ def company_dimension_table(entreprise: pd.Series, selected_features: List[str])
     return pd.DataFrame(rows)
 
 
+def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
+    st.markdown("### New company questionnaire")
+    st.caption("Use the Google Form links or fill in the in-app assessment below.")
+
+    link_col_1, link_col_2 = st.columns(2)
+    with link_col_1:
+        st.link_button("Open questionnaire editor", "https://docs.google.com/forms/d/18q1_-kOGChcj4DbGp7onkGYWFRK9_EW382yCCRSH4U8/edit", use_container_width=True)
+    with link_col_2:
+        st.link_button("Open respondent form", "https://forms.gle/Uc7689Y6Y45qpiTo7", use_container_width=True)
+
+    with st.form("manual_company_form", clear_on_submit=False):
+        meta_1, meta_2, meta_3 = st.columns(3)
+        company_name = meta_1.text_input("Company name", value="Nouvelle entreprise")
+        company_sector = meta_2.text_input("Secteur industriel", value="N/A")
+        company_size = meta_3.text_input("Taille entreprise", value="N/A")
+
+        manual_scores: Dict[str, float] = {}
+        for dimension, sub_dims in DIMENSION_MAP.items():
+            with st.expander(dimension, expanded=True):
+                for sub_dim in sub_dims:
+                    manual_scores[sub_dim] = st.slider(
+                        sub_dim.strip(),
+                        min_value=1.0,
+                        max_value=5.0,
+                        value=3.0,
+                        step=0.1,
+                        key=f"manual_{sub_dim}",
+                    )
+
+        lean_cols = [col for col in df_reference.columns if col.startswith("Lean_")]
+        tech_cols = [col for col in df_reference.columns if col.startswith("Tech_")]
+        lean_options = {LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")): col for col in lean_cols}
+        tech_options = {col.replace("Tech_", ""): col for col in tech_cols}
+
+        selected_lean = st.multiselect(
+            "Lean methods already adopted",
+            options=sorted(lean_options.keys()),
+        )
+        selected_tech = st.multiselect(
+            "Industry 4.0 technologies already adopted",
+            options=sorted(tech_options.keys()),
+        )
+
+        submitted = st.form_submit_button("Analyze new company", use_container_width=True)
+
+    if not submitted:
+        st.info("Complete the questionnaire and click 'Analyze new company' to generate the full diagnosis.")
+        return pd.Series(dtype=object)
+
+    manual_company = pd.Series(0, index=df_reference.columns, dtype=object)
+    manual_company["Nom entreprise"] = company_name
+    manual_company["Secteur industriel"] = company_sector
+    manual_company["Taille entreprise "] = company_size
+
+    for col, value in manual_scores.items():
+        manual_company[col] = value
+
+    for label in selected_lean:
+        manual_company[lean_options[label]] = 1
+    for label in selected_tech:
+        manual_company[tech_options[label]] = 1
+
+    return manual_company
+
+
 def determine_scenario(cluster_label: str, predicted_dt: str) -> str:
     order = {"Niveau Initial": 1, "Niveau Intégré": 2, "Niveau Avancé": 3}
     cluster_rank = order.get(cluster_label, 0)
@@ -581,12 +653,30 @@ def render_application_tab(
     X: pd.DataFrame,
     selected_company,
 ) -> None:
-    entreprise = df_clustered.loc[selected_company]
-    st.markdown("### Company profile")
-    info_1, info_2, info_3 = st.columns(3)
-    info_1.metric("Company index", selected_company)
-    info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
-    info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
+    mode = st.radio(
+        "Application mode",
+        ["Existing company from dataset", "New company input"],
+        horizontal=True,
+    )
+
+    if mode == "Existing company from dataset":
+        entreprise = df_clustered.loc[selected_company]
+        company_label = f"Dataset company #{selected_company}"
+        st.markdown("### Company profile")
+        info_1, info_2, info_3 = st.columns(3)
+        info_1.metric("Company index", selected_company)
+        info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
+        info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
+    else:
+        entreprise = build_manual_company_input(df_clustered)
+        if entreprise.empty:
+            return
+        company_label = entreprise.get("Nom entreprise", "Nouvelle entreprise")
+        st.markdown("### New company profile")
+        info_1, info_2, info_3 = st.columns(3)
+        info_1.metric("Company", company_label)
+        info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
+        info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
 
     st.markdown("### Maturity scores by sub-dimension")
     st.dataframe(company_dimension_table(entreprise, selected_features), use_container_width=True)
@@ -614,6 +704,7 @@ def render_application_tab(
     cluster_col, tree_col = st.columns(2)
     cluster_col.metric("Organizational maturity (KMeans)", predicted_cluster_label)
     tree_col.metric("Technological maturity (Decision Tree)", predicted_dt)
+    st.caption(f"Analysis target: {company_label}")
 
     scenario_key = determine_scenario(predicted_cluster_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
