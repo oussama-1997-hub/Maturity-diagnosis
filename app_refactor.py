@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.tree import DecisionTreeClassifier, export_graphviz, export_text
+from sklearn.tree import DecisionTreeClassifier, export_graphviz, plot_tree
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -866,12 +866,6 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
     )
     importances = pd.Series(clf.feature_importances_, index=X.columns)
     top_importances = importances[importances > 0].sort_values(ascending=False).head(12)
-    summary_1, summary_2, summary_3 = st.columns(3)
-    summary_1.metric("Tree depth", clf.get_depth())
-    summary_2.metric("Leaf nodes", clf.get_n_leaves())
-    summary_3.metric("Active drivers", int((importances > 0).sum()))
-
-    rules_text = export_text(clf, feature_names=list(X.columns), max_depth=3)
 
     left, right = st.columns([0.9, 1.1])
     with left:
@@ -884,21 +878,19 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
             ax.set_title("Top decision-tree drivers")
             st.pyplot(fig)
     with right:
-        st.markdown("### Decision tree view")
-        dot_data = export_graphviz(
+        st.markdown("### Decision tree figure")
+        fig, ax = plt.subplots(figsize=(28, 14))
+        plot_tree(
             clf,
-            out_file=None,
-            feature_names=X.columns,
+            feature_names=list(X.columns),
             class_names=[str(c) for c in clf.classes_],
             filled=True,
             rounded=True,
-            special_characters=True,
+            fontsize=8,
+            ax=ax,
         )
-        st.graphviz_chart(dot_data)
-
-    st.markdown("### Simplified decision rules")
-    st.caption("This condensed text view is easier to explain to clients than the full tree graph.")
-    st.code(rules_text, language="text")
+        ax.set_title("Decision tree classification", fontsize=16)
+        st.pyplot(fig, use_container_width=True)
 
 
 def render_application_tab(
@@ -1067,8 +1059,8 @@ def render_application_tab(
         }
     )
     st.markdown("### Personalized roadmap")
-    st.caption("This roadmap combines organizational maturity gaps with target-cluster adoption priorities.")
-    st.markdown("#### Organizational maturity roadmap")
+    st.caption("This roadmap is split into two parts: an organizational maturity roadmap and a technological adoption roadmap.")
+    st.markdown("#### 1. Organizational maturity roadmap")
     st.dataframe(gap_df, use_container_width=True)
 
     lean_cluster_mean = df_clustered.loc[df_clustered["cluster"] == next_cluster, lean_cols].mean()
@@ -1078,7 +1070,7 @@ def render_application_tab(
 
     roadmap_col, tech_col = st.columns(2)
     with roadmap_col:
-        st.markdown("#### Lean methods to adopt")
+        st.markdown("#### 2. Technological roadmap: Lean methods to adopt")
         lean_df = pd.DataFrame(
             {
                 "Lean method": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
@@ -1090,7 +1082,7 @@ def render_application_tab(
         st.dataframe(lean_df if not lean_df.empty else pd.DataFrame({"Info": ["No priority Lean method to adopt."]}), use_container_width=True)
 
     with tech_col:
-        st.markdown("#### Industry 4.0 technologies to adopt")
+        st.markdown("#### 2. Technological roadmap: Industry 4.0 technologies to adopt")
         tech_df = pd.DataFrame(
             {
                 "Technology": [col.replace("Tech_", "") for col in tech_to_adopt.index],
