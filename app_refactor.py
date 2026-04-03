@@ -30,28 +30,28 @@ DIMENSION_MAP: Dict[str, List[str]] = {
     "Leadership": [
         "Leadership - Engagement Lean ",
         "Leadership - Engagement DT",
-        "Leadership - StratÃ©gie ",
+        "Leadership - Stratégie ",
         "Leadership - Communication",
     ],
     "Supply Chain": [
         "Supply Chain - Collaboration inter-organisationnelle",
-        "Supply Chain - TraÃ§abilitÃ©",
-        "Supply Chain - Impact sur les employÃ©es",
+        "Supply Chain - Traçabilité",
+        "Supply Chain - Impact sur les employées",
     ],
-    "OpÃ©rations": [
-        "OpÃ©rations - Standardisation des processus",
-        "OpÃ©rations - Juste-Ã -temps (JAT)",
-        "OpÃ©rations - Gestion des rÃ©sistances",
+    "Opérations": [
+        "Opérations - Standardisation des processus",
+        "Opérations - Juste-à-temps (JAT)",
+        "Opérations - Gestion des résistances",
     ],
     "Technologies": [
-        "Technologies - ConnectivitÃ© et gestion des donnÃ©es",
+        "Technologies - Connectivité et gestion des données",
         "Technologies - Automatisation",
         "Technologies - Pilotage du changement",
     ],
     "Organisation Apprenante": [
-        "Organisation apprenante  - Formation et dÃ©veloppement des compÃ©tences",
+        "Organisation apprenante  - Formation et développement des compétences",
         "Organisation apprenante  - Collaboration et Partage des Connaissances",
-        "Organisation apprenante  - FlexibilitÃ© organisationnelle",
+        "Organisation apprenante  - Flexibilité organisationnelle",
     ],
 }
 
@@ -61,30 +61,30 @@ CRONBACH_DATA = {
         "items": {
             "Leadership - Communication": 0.992,
             "Leadership - Engagement Lean": 0.926,
-            "Leadership - StratÃ©gie": 0.901,
+            "Leadership - Stratégie": 0.901,
             "Leadership - Engagement DT": 0.868,
         },
     },
     "Supply Chain": {
         "alpha": 0.863,
         "items": {
-            "Supply Chain - Impact sur les employÃ©es": 0.925,
-            "Supply Chain - TraÃ§abilitÃ©": 0.826,
+            "Supply Chain - Impact sur les employées": 0.925,
+            "Supply Chain - Traçabilité": 0.826,
             "Supply Chain - Collaboration inter-organisationnelle": 0.722,
         },
     },
     "Operations": {
         "alpha": 0.867,
         "items": {
-            "OpÃ©rations - Juste-Ã -temps (JAT)": 0.931,
-            "OpÃ©rations - Standardisation des processus": 0.831,
-            "OpÃ©rations - Gestion des rÃ©sistances": 0.754,
+            "Opérations - Juste-à-temps (JAT)": 0.931,
+            "Opérations - Standardisation des processus": 0.831,
+            "Opérations - Gestion des résistances": 0.754,
         },
     },
     "Technologies": {
         "alpha": 0.888,
         "items": {
-            "Technologies - ConnectivitÃ© et gestion des donnÃ©es": 0.904,
+            "Technologies - Connectivité et gestion des données": 0.904,
             "Technologies - Automatisation": 0.881,
             "Technologies - Pilotage du changement": 0.781,
         },
@@ -92,22 +92,22 @@ CRONBACH_DATA = {
     "Organisation Apprenante": {
         "alpha": 0.854,
         "items": {
-            "Organisation apprenante  - Formation et dÃ©veloppement des compÃ©tences": 0.876,
+            "Organisation apprenante  - Formation et développement des compétences": 0.876,
             "Organisation apprenante  - Collaboration et Partage des Connaissances": 0.799,
-            "Organisation apprenante  - FlexibilitÃ© organisationnelle": 0.763,
+            "Organisation apprenante  - Flexibilité organisationnelle": 0.763,
         },
     },
 }
 
 LEAN_SUPPORT = {
-    "Juste Ã  temps (JAT)": "Robots autonomes, WMS, RFID",
-    "Takt Time": "Big Data & Analytics, SystÃ¨mes cyber-physiques, ERP, WMS",
+    "Juste à temps (JAT)": "Robots autonomes, WMS, RFID",
+    "Takt Time": "Big Data & Analytics, Systèmes cyber-physiques, ERP, WMS",
     "Heijunka": "WMS, MES",
-    "MÃ©thode TPM / TRS": "MES, RFID",
+    "Méthode TPM / TRS": "MES, RFID",
     "Poka Yoke": "Simulation, Robots autonomes, ERP",
     "Kaizen": "MES, RFID, Big Data & Analytics, Fabrication additive (Impression 3D)",
     "Kanban": "Fabrication additive (Impression 3D)",
-    "Value Stream Mapping (VSM)": "SystÃ¨mes cyber-physiques, RFID, WMS",
+    "Value Stream Mapping (VSM)": "Systèmes cyber-physiques, RFID, WMS",
     "QRQC": "Intelligence artificielle",
 }
 
@@ -120,9 +120,9 @@ LEAN_DISPLAY_NAMES = {
     "Lean_Value Stream Mapping (VSM)": "Value Stream Mapping (VSM)",
     "Lean_Kaizen": "Kaizen",
     "Lean_DDMRP": "DDMRP",
-    "Lean_MÃ©thode TPM / TRS": "MÃ©thode TPM / TRS",
+    "Lean_MÃ©thode TPM / TRS": "Méthode TPM / TRS",
     "Lean_Kata": "Kata",
-    "Lean_Just in time": "Juste Ã  temps (JAT)",
+    "Lean_Just in time": "Juste à temps (JAT)",
     "Lean_QRAP": "QRAP",
     "Lean_TPM / TRS method": "TPM / TRS",
     "Lean_6 sigma": "6 Sigma",
@@ -559,12 +559,12 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
         )
         normalized.drop(columns=["Lean_DDMRP", "Lean_Maki-Gami/Hoshinâ€¦etc"], inplace=True)
 
-    jat_column = "OpÃ©rations - Juste-Ã -temps (JAT)"
+    jat_column = "Opérations - Juste-à-temps (JAT)"
     if jat_column in normalized.columns:
-        normalized["Lean_Juste Ã  temps"] = normalized[jat_column].apply(lambda x: 1 if x in [4, 5] else 0)
+        normalized["Lean_Juste à temps"] = normalized[jat_column].apply(lambda x: 1 if x in [4, 5] else 0)
         if "Lean_Just in time" in normalized.columns:
             normalized["Lean_Just in time"] = (
-                normalized["Lean_Juste Ã  temps"].fillna(0).astype(int)
+                normalized["Lean_Juste à temps"].fillna(0).astype(int)
                 | normalized["Lean_Just in time"].fillna(0).astype(int)
             )
     return normalized
@@ -580,10 +580,10 @@ def train_decision_tree(df: pd.DataFrame, target_col: str) -> Tuple[DecisionTree
         "Pays ",
         "Cluster Label",
         "cluster",
-        "Niveau de maturitÃ© Lean 4.0",
+        "Niveau de maturité Lean 4.0",
         "Taille entreprise ",
         "Secteur industriel",
-        "MÃ©thodes Lean ",
+        "Méthodes Lean ",
         "Technologies industrie 4.0",
         "Cluster",
         "Feature_Cluster",
@@ -772,7 +772,8 @@ def pretty_tree_label(name: str) -> str:
         .replace("Technologies - ", "Tech - ")
         .replace("Supply Chain - ", "SC - ")
         .replace("Leadership - ", "Lead - ")
-        .replace("OpÃƒÂ©rations - ", "Ops - ")
+        .replace("Opérations - ", "Ops - ")
+        .replace("OpÃ©rations - ", "Ops - ")
     )
     return "\\n".join(textwrap.wrap(clean, width=22)) or clean
 
@@ -866,7 +867,7 @@ def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_
         {
             "Cluster": summary.index,
             "Nombre d'entreprises": summary.values,
-            "Niveau de maturitÃ© Lean 4.0": summary.index.map(cluster_label_map),
+        "Niveau de maturité Lean 4.0": summary.index.map(cluster_label_map),
         }
     )
     st.markdown("### Cluster summary")
@@ -882,7 +883,7 @@ def render_pca_tab(df_clustered: pd.DataFrame, scaled_features: np.ndarray) -> N
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(scaled_features)
     df_pca = pd.DataFrame(pca_result, columns=["PCA1", "PCA2"])
-    df_pca["label"] = df_clustered.loc[df_pca.index, "Niveau de maturitÃ© Lean 4.0"].values
+    df_pca["label"] = df_clustered.loc[df_pca.index, "Niveau de maturité Lean 4.0"].values
     fig, ax = plt.subplots()
     sns.scatterplot(data=df_pca, x="PCA1", y="PCA2", hue="label", palette="Set2", ax=ax)
     ax.set_title("PCA of clusters")
@@ -895,7 +896,7 @@ def render_radar_tab(df_clustered: pd.DataFrame, radar_features: List[str]) -> N
         "Radar comparison",
         "Understand how maturity groups differ both at sub-dimension level and at dimension level. This is useful for management communication and capability storytelling.",
     )
-    cluster_avg = df_clustered.groupby("Niveau de maturitÃ© Lean 4.0")[radar_features].mean().dropna(axis=1, how="any")
+    cluster_avg = df_clustered.groupby("Niveau de maturité Lean 4.0")[radar_features].mean().dropna(axis=1, how="any")
     if cluster_avg.empty:
         st.warning("No radar data available for the selected dimensions.")
         return
