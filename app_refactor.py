@@ -1372,10 +1372,10 @@ def main() -> None:
         st.stop()
     cluster_means = pd.concat([aligned_df[["cluster"]], cluster_feature_frame], axis=1).groupby("cluster").mean(numeric_only=True)
     cluster_label_map = rank_cluster_labels(cluster_means)
-    aligned_df["Niveau de maturitÃ© Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
+    aligned_df["Niveau de maturité Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
 
     normalized_df = normalize_columns(aligned_df.copy())
-    target_col = "Niveau MaturitÃ©" if "Niveau MaturitÃ©" in normalized_df.columns else "Niveau de maturitÃ© Lean 4.0"
+    target_col = "Niveau Maturité" if "Niveau Maturité" in normalized_df.columns else "Niveau de maturité Lean 4.0"
     clf, X = train_decision_tree(normalized_df, target_col)
 
     render_overview(aligned_df, selected_features, cluster_label_map)
