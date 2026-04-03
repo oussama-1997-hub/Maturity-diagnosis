@@ -15,7 +15,7 @@ from sklearn.decomposition import PCA
 from sklearn.metrics import silhouette_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.tree import DecisionTreeClassifier, export_graphviz
+from sklearn.tree import DecisionTreeClassifier, export_graphviz, export_text
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -168,24 +168,51 @@ def render_hero() -> None:
             padding-bottom: 2rem;
         }
         [data-testid="stSidebar"] {
-            background: linear-gradient(180deg, #0f1720 0%, #18242e 100%);
+            background: linear-gradient(180deg, #f8fbfc 0%, #eef4f6 100%);
+            border-right: 1px solid rgba(18, 51, 43, 0.08);
         }
         [data-testid="stSidebar"] * {
-            color: #f4f7f8;
+            color: #17312a;
         }
         [data-testid="stSidebar"] .stSelectbox label,
         [data-testid="stSidebar"] .stMultiSelect label,
         [data-testid="stSidebar"] .stSlider label,
-        [data-testid="stSidebar"] .stFileUploader label {
-            color: #dce7eb !important;
+        [data-testid="stSidebar"] .stFileUploader label,
+        [data-testid="stSidebar"] .stCheckbox label {
+            color: #4f6760 !important;
             font-weight: 600;
         }
         [data-testid="stSidebar"] .stSelectbox > div > div,
         [data-testid="stSidebar"] .stMultiSelect > div > div,
         [data-testid="stSidebar"] .stFileUploader > div {
-            background: rgba(255,255,255,0.07);
+            background: rgba(255,255,255,0.95);
             border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(18, 51, 43, 0.08);
+        }
+        [data-testid="stSidebar"] .stSlider [data-baseweb="slider"] {
+            padding-top: 0.35rem;
+            padding-bottom: 0.35rem;
+        }
+        [data-testid="stSidebar"] .stMarkdown h3 {
+            color: #17312a;
+        }
+        .sidebar-card {
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(18, 51, 43, 0.08);
+            border-radius: 18px;
+            padding: 0.9rem 0.95rem;
+            margin-bottom: 0.8rem;
+            box-shadow: 0 10px 24px rgba(18, 51, 43, 0.04);
+        }
+        .sidebar-card strong {
+            display: block;
+            margin-bottom: 0.2rem;
+            color: #15312b;
+        }
+        .sidebar-card span {
+            color: #61746e;
+            font-size: 0.9rem;
+            line-height: 1.5;
         }
         .hero-box {
             padding: 2rem 2.1rem;
@@ -341,32 +368,52 @@ def load_image() -> Image.Image:
 
 
 def build_sidebar(df: pd.DataFrame) -> dict:
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-card">
+            <strong>Configuration Studio</strong>
+            <span>Keep the sidebar focused on scope and model settings. Company diagnosis happens in the Application module.</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     selected_features: List[str] = []
-    st.sidebar.markdown("### 1. Maturity scope")
-    for dimension, sub_dims in DIMENSION_MAP.items():
-        with st.sidebar.expander(dimension, expanded=True):
-            selected = st.multiselect(
-                f"Include sub-dimensions from {dimension}",
-                sub_dims,
-                default=sub_dims,
-                key=f"features_{dimension}",
-            )
-            selected_features.extend(selected)
+    dimension_scope = st.sidebar.multiselect(
+        "1. Dimensions to include",
+        list(DIMENSION_MAP.keys()),
+        default=list(DIMENSION_MAP.keys()),
+        help="Choose the maturity dimensions that should be part of the diagnosis scope.",
+    )
+    fine_tune = st.sidebar.checkbox("Fine tune sub-dimensions", value=False, help="Turn on only if you want to manually remove specific questions inside a dimension.")
+
+    for dimension in dimension_scope:
+        sub_dims = DIMENSION_MAP[dimension]
+        if fine_tune:
+            with st.sidebar.expander(f"{dimension} questions", expanded=False):
+                selected = st.multiselect(
+                    f"Active sub-dimensions for {dimension}",
+                    sub_dims,
+                    default=sub_dims,
+                    key=f"features_{dimension}",
+                )
+        else:
+            selected = sub_dims
+        selected_features.extend(selected)
 
     radar_dimensions = st.sidebar.multiselect(
         "### 2. Radar profile dimensions",
-        list(DIMENSION_MAP.keys()),
-        default=list(DIMENSION_MAP.keys()),
+        dimension_scope or list(DIMENSION_MAP.keys()),
+        default=dimension_scope or list(DIMENSION_MAP.keys()),
     )
     radar_features: List[str] = []
     for dimension in radar_dimensions:
         radar_features.extend(DIMENSION_MAP[dimension])
 
     st.sidebar.markdown("### 3. Clustering settings")
-    k_range = st.sidebar.slider("Cluster search range", 2, 10, (2, 6))
+    k_range = st.sidebar.slider("Cluster search range", 2, 10, (2, 6), help="The app evaluates elbow and silhouette scores across this range before applying the operational cluster choice.")
     k_values = list(range(k_range[0], k_range[1] + 1))
     default_k = 3 if 3 in k_values else k_values[0]
-    final_k = st.sidebar.selectbox("Operational number of clusters", k_values, index=k_values.index(default_k))
+    final_k = st.sidebar.select_slider("Operational number of clusters", options=k_values, value=default_k, help="Select the cluster structure you want to use throughout the app.")
 
     company_options = df.index.tolist()
     default_company = 4 if len(company_options) > 4 else 0
@@ -523,10 +570,10 @@ def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
                 for sub_dim in sub_dims:
                     manual_scores[sub_dim] = st.slider(
                         sub_dim.strip(),
-                        min_value=1.0,
-                        max_value=5.0,
-                        value=3.0,
-                        step=0.1,
+                        min_value=1,
+                        max_value=5,
+                        value=3,
+                        step=1,
                         key=f"manual_{sub_dim}",
                     )
 
@@ -768,7 +815,13 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
         "Use the decision tree to explain which Lean methods and technology adoption patterns are most influential in the maturity classification logic.",
     )
     importances = pd.Series(clf.feature_importances_, index=X.columns)
-    top_importances = importances[importances > 0].sort_values(ascending=False).head(20)
+    top_importances = importances[importances > 0].sort_values(ascending=False).head(12)
+    summary_1, summary_2, summary_3 = st.columns(3)
+    summary_1.metric("Tree depth", clf.get_depth())
+    summary_2.metric("Leaf nodes", clf.get_n_leaves())
+    summary_3.metric("Active drivers", int((importances > 0).sum()))
+
+    rules_text = export_text(clf, feature_names=list(X.columns), max_depth=3)
 
     left, right = st.columns([0.9, 1.1])
     with left:
@@ -781,7 +834,7 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
             ax.set_title("Top decision-tree drivers")
             st.pyplot(fig)
     with right:
-        st.markdown("### Decision tree")
+        st.markdown("### Decision tree view")
         dot_data = export_graphviz(
             clf,
             out_file=None,
@@ -792,6 +845,10 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
             special_characters=True,
         )
         st.graphviz_chart(dot_data)
+
+    st.markdown("### Simplified decision rules")
+    st.caption("This condensed text view is easier to explain to clients than the full tree graph.")
+    st.code(rules_text, language="text")
 
 
 def render_application_tab(
