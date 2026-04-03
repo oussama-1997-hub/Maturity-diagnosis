@@ -1,6 +1,7 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
+import textwrap
 from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
@@ -29,28 +30,28 @@ DIMENSION_MAP: Dict[str, List[str]] = {
     "Leadership": [
         "Leadership - Engagement Lean ",
         "Leadership - Engagement DT",
-        "Leadership - Stratégie ",
+        "Leadership - StratÃ©gie ",
         "Leadership - Communication",
     ],
     "Supply Chain": [
         "Supply Chain - Collaboration inter-organisationnelle",
-        "Supply Chain - Traçabilité",
-        "Supply Chain - Impact sur les employées",
+        "Supply Chain - TraÃ§abilitÃ©",
+        "Supply Chain - Impact sur les employÃ©es",
     ],
-    "Opérations": [
-        "Opérations - Standardisation des processus",
-        "Opérations - Juste-à-temps (JAT)",
-        "Opérations - Gestion des résistances",
+    "OpÃ©rations": [
+        "OpÃ©rations - Standardisation des processus",
+        "OpÃ©rations - Juste-Ã -temps (JAT)",
+        "OpÃ©rations - Gestion des rÃ©sistances",
     ],
     "Technologies": [
-        "Technologies - Connectivité et gestion des données",
+        "Technologies - ConnectivitÃ© et gestion des donnÃ©es",
         "Technologies - Automatisation",
         "Technologies - Pilotage du changement",
     ],
     "Organisation Apprenante": [
-        "Organisation apprenante  - Formation et développement des compétences",
+        "Organisation apprenante  - Formation et dÃ©veloppement des compÃ©tences",
         "Organisation apprenante  - Collaboration et Partage des Connaissances",
-        "Organisation apprenante  - Flexibilité organisationnelle",
+        "Organisation apprenante  - FlexibilitÃ© organisationnelle",
     ],
 }
 
@@ -60,30 +61,30 @@ CRONBACH_DATA = {
         "items": {
             "Leadership - Communication": 0.992,
             "Leadership - Engagement Lean": 0.926,
-            "Leadership - Stratégie": 0.901,
+            "Leadership - StratÃ©gie": 0.901,
             "Leadership - Engagement DT": 0.868,
         },
     },
     "Supply Chain": {
         "alpha": 0.863,
         "items": {
-            "Supply Chain - Impact sur les employées": 0.925,
-            "Supply Chain - Traçabilité": 0.826,
+            "Supply Chain - Impact sur les employÃ©es": 0.925,
+            "Supply Chain - TraÃ§abilitÃ©": 0.826,
             "Supply Chain - Collaboration inter-organisationnelle": 0.722,
         },
     },
     "Operations": {
         "alpha": 0.867,
         "items": {
-            "Opérations - Juste-à-temps (JAT)": 0.931,
-            "Opérations - Standardisation des processus": 0.831,
-            "Opérations - Gestion des résistances": 0.754,
+            "OpÃ©rations - Juste-Ã -temps (JAT)": 0.931,
+            "OpÃ©rations - Standardisation des processus": 0.831,
+            "OpÃ©rations - Gestion des rÃ©sistances": 0.754,
         },
     },
     "Technologies": {
         "alpha": 0.888,
         "items": {
-            "Technologies - Connectivité et gestion des données": 0.904,
+            "Technologies - ConnectivitÃ© et gestion des donnÃ©es": 0.904,
             "Technologies - Automatisation": 0.881,
             "Technologies - Pilotage du changement": 0.781,
         },
@@ -91,22 +92,22 @@ CRONBACH_DATA = {
     "Organisation Apprenante": {
         "alpha": 0.854,
         "items": {
-            "Organisation apprenante  - Formation et développement des compétences": 0.876,
+            "Organisation apprenante  - Formation et dÃ©veloppement des compÃ©tences": 0.876,
             "Organisation apprenante  - Collaboration et Partage des Connaissances": 0.799,
-            "Organisation apprenante  - Flexibilité organisationnelle": 0.763,
+            "Organisation apprenante  - FlexibilitÃ© organisationnelle": 0.763,
         },
     },
 }
 
 LEAN_SUPPORT = {
-    "Juste à temps (JAT)": "Robots autonomes, WMS, RFID",
-    "Takt Time": "Big Data & Analytics, Systèmes cyber-physiques, ERP, WMS",
+    "Juste Ã  temps (JAT)": "Robots autonomes, WMS, RFID",
+    "Takt Time": "Big Data & Analytics, SystÃ¨mes cyber-physiques, ERP, WMS",
     "Heijunka": "WMS, MES",
-    "Méthode TPM / TRS": "MES, RFID",
+    "MÃ©thode TPM / TRS": "MES, RFID",
     "Poka Yoke": "Simulation, Robots autonomes, ERP",
     "Kaizen": "MES, RFID, Big Data & Analytics, Fabrication additive (Impression 3D)",
     "Kanban": "Fabrication additive (Impression 3D)",
-    "Value Stream Mapping (VSM)": "Systèmes cyber-physiques, RFID, WMS",
+    "Value Stream Mapping (VSM)": "SystÃ¨mes cyber-physiques, RFID, WMS",
     "QRQC": "Intelligence artificielle",
 }
 
@@ -115,13 +116,13 @@ LEAN_DISPLAY_NAMES = {
     "Lean_DDMRP/ hoshin kanri": "DDMRP / Hoshin Kanri",
     "Lean_5S": "5S",
     "Lean_Heijunka": "Heijunka",
-    "Lean_Maki-Gami/Hoshin…etc": "Maki-Gami / Hoshin",
+    "Lean_Maki-Gami/Hoshinâ€¦etc": "Maki-Gami / Hoshin",
     "Lean_Value Stream Mapping (VSM)": "Value Stream Mapping (VSM)",
     "Lean_Kaizen": "Kaizen",
     "Lean_DDMRP": "DDMRP",
-    "Lean_Méthode TPM / TRS": "Méthode TPM / TRS",
+    "Lean_MÃ©thode TPM / TRS": "MÃ©thode TPM / TRS",
     "Lean_Kata": "Kata",
-    "Lean_Just in time": "Juste à temps (JAT)",
+    "Lean_Just in time": "Juste Ã  temps (JAT)",
     "Lean_QRAP": "QRAP",
     "Lean_TPM / TRS method": "TPM / TRS",
     "Lean_6 sigma": "6 Sigma",
@@ -134,7 +135,7 @@ LEAN_DISPLAY_NAMES = {
 SCENARIO_TEXT = {
     "tech_lag": {
         "title": "Scenario 1: Technology lag",
-        "icon": "🔧",
+        "icon": "ðŸ”§",
         "body": "The organizational maturity is stronger than the technology adoption. Prioritize the missing Lean tools and Industry 4.0 enablers used by the next maturity cluster.",
         "recommendations": [
             "Prioritize the technologies and Lean methods already used in the target maturity cluster but still absent in the company.",
@@ -144,7 +145,7 @@ SCENARIO_TEXT = {
     },
     "org_lag": {
         "title": "Scenario 2: Organizational lag",
-        "icon": "⚡",
+        "icon": "âš¡",
         "body": "Technology adoption is ahead of organizational readiness. Focus on process discipline, leadership, and learning-system gaps before scaling more tools.",
         "recommendations": [
             "Prioritize the Lean 4.0 sub-dimensions with the largest negative gap against the target cluster.",
@@ -154,7 +155,7 @@ SCENARIO_TEXT = {
     },
     "aligned": {
         "title": "Scenario 3: Strategic alignment",
-        "icon": "🚀",
+        "icon": "ðŸš€",
         "body": "Organizational maturity and technology adoption are aligned. Continue with balanced improvements and target the highest-impact decision-tree drivers.",
         "recommendations": [
             "Maintain a balanced improvement rhythm between maturity dimensions and technology adoption.",
@@ -175,13 +176,30 @@ def render_hero() -> None:
     st.markdown(
         """
         <style>
+        .stApp {
+            background:
+                radial-gradient(circle at top left, rgba(15, 118, 110, 0.08), transparent 20%),
+                radial-gradient(circle at top right, rgba(37, 99, 235, 0.10), transparent 24%),
+                linear-gradient(180deg, #f6fbff 0%, #f4faf7 42%, #f8fbfd 100%);
+        }
         .main .block-container {
             max-width: none !important;
             width: 100% !important;
+            min-width: 100% !important;
             padding-top: 1rem;
             padding-left: 2.2rem;
             padding-right: 2.2rem;
             padding-bottom: 2rem;
+        }
+        section.main > div {
+            max-width: 100% !important;
+        }
+        [data-testid="stAppViewContainer"] > .main,
+        [data-testid="stAppViewContainer"] > .main > div,
+        [data-testid="stAppViewBlockContainer"],
+        .stMainBlockContainer {
+            max-width: 100% !important;
+            width: 100% !important;
         }
         [data-testid="stAppViewContainer"] .main {
             width: 100%;
@@ -189,6 +207,20 @@ def render_hero() -> None:
         }
         [data-testid="stHorizontalBlock"] {
             align-items: stretch;
+        }
+        .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+            color: #0f2f43;
+            letter-spacing: -0.02em;
+        }
+        .stMarkdown h2 {
+            font-weight: 800;
+        }
+        .stMarkdown h3 {
+            font-weight: 700;
+            color: #174b63;
+        }
+        .stCaption {
+            color: #5d7280 !important;
         }
         [data-testid="stSidebar"] {
             background: linear-gradient(180deg, #f8fbfc 0%, #eef4f6 100%);
@@ -249,14 +281,17 @@ def render_hero() -> None:
             box-shadow: 0 24px 50px rgba(16, 24, 40, 0.08);
         }
         .hero-title {
-            font-size: 2.25rem;
-            font-weight: 800;
+            font-size: 2.55rem;
+            font-weight: 900;
             color: #12332b;
+            background: linear-gradient(135deg, #0f766e 0%, #1d4ed8 55%, #0f172a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
         }
         .hero-copy {
-            color: #48615b;
-            font-size: 1.04rem;
+            color: #425f6f;
+            font-size: 1.06rem;
             line-height: 1.7;
             margin-bottom: 0;
             max-width: 72rem;
@@ -312,22 +347,43 @@ def render_hero() -> None:
             margin-bottom: 1rem;
         }
         .section-kicker {
-            color: #7d8e89;
+            color: #17746c;
             text-transform: uppercase;
             font-size: 0.76rem;
             letter-spacing: 0.08em;
             margin-bottom: 0.25rem;
+            font-weight: 800;
         }
         .section-title {
             color: #16332b;
-            font-size: 1.4rem;
-            font-weight: 700;
+            font-size: 1.52rem;
+            font-weight: 800;
             margin-bottom: 0.3rem;
         }
         .section-copy {
-            color: #5c6e68;
+            color: #526673;
             line-height: 1.65;
             margin-bottom: 0;
+        }
+        .roadmap-card {
+            border-radius: 22px;
+            padding: 1rem 1.05rem;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+            margin-bottom: 0.9rem;
+            background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(246,250,255,0.96));
+        }
+        .roadmap-title {
+            font-size: 1.08rem;
+            font-weight: 800;
+            color: #14324d;
+            margin-bottom: 0.2rem;
+        }
+        .roadmap-copy {
+            color: #5f7382;
+            font-size: 0.95rem;
+            line-height: 1.55;
+            margin: 0;
         }
         div[data-baseweb="tab-list"] {
             gap: 0.45rem;
@@ -346,10 +402,11 @@ def render_hero() -> None:
         }
         </style>
         <div class="hero-box">
-            <div class="hero-title">Lean 4.0 Studio</div>
+            <div class="hero-title">Lean 4.0 Intelligence Studio</div>
             <p class="hero-copy">
-                A full decision-support studio for Lean 4.0 maturity diagnosis. The analytics stay intact, but the workflow is
-                now framed for executive review, benchmarking, operational exploration, and company-level recommendation building.
+                A business-intelligence platform for Lean 4.0 maturity diagnosis, benchmarking, and transformation planning.
+                The analytics stay intact, while the experience is reframed for executive review, client-facing diagnosis,
+                and roadmap generation that companies can understand and act on.
             </p>
             <div class="workflow-grid">
                 <div class="workflow-step"><strong>01. Intake</strong><span>Load your dataset and frame the diagnosis scope.</span></div>
@@ -471,7 +528,7 @@ def compute_cluster_metrics(scaled_features: np.ndarray, k_range: Tuple[int, int
 
 def rank_cluster_labels(cluster_means: pd.DataFrame) -> Dict[int, str]:
     ranking = cluster_means.mean(axis=1).sort_values().index.tolist()
-    labels = ["Niveau Initial", "Niveau Intégré", "Niveau Avancé"]
+    labels = ["Niveau Initial", "Niveau IntÃ©grÃ©", "Niveau AvancÃ©"]
     mapping: Dict[int, str] = {}
     for idx, cluster_id in enumerate(ranking):
         mapping[int(cluster_id)] = labels[min(idx, len(labels) - 1)]
@@ -482,9 +539,9 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
     normalized = df.copy()
 
     merge_pairs = [
-        ("Lean_Méthode TPM / TRS", "Lean_TPM / TRS method"),
-        ("Tech_Réalité augmentée", "Tech_Augmented reality"),
-        ("Tech_Systèmes cyber physiques", "Tech_Cyber ​​physical systems"),
+        ("Lean_MÃ©thode TPM / TRS", "Lean_TPM / TRS method"),
+        ("Tech_RÃ©alitÃ© augmentÃ©e", "Tech_Augmented reality"),
+        ("Tech_SystÃ¨mes cyber physiques", "Tech_Cyber â€‹â€‹physical systems"),
         ("Tech_Intelligence artificielle", "Tech_Artificial intelligence"),
         ("Tech_Robots autonomes", "Tech_Autonomous robots"),
     ]
@@ -494,20 +551,20 @@ def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
             normalized[primary] = normalized[primary].fillna(0).astype(int) | normalized[alias].fillna(0).astype(int)
             normalized.drop(columns=[alias], inplace=True)
 
-    if {"Lean_DDMRP/ hoshin kanri", "Lean_DDMRP", "Lean_Maki-Gami/Hoshin…etc"}.issubset(normalized.columns):
+    if {"Lean_DDMRP/ hoshin kanri", "Lean_DDMRP", "Lean_Maki-Gami/Hoshinâ€¦etc"}.issubset(normalized.columns):
         normalized["Lean_DDMRP/ hoshin kanri"] = (
             normalized["Lean_DDMRP/ hoshin kanri"].fillna(0).astype(int)
             | normalized["Lean_DDMRP"].fillna(0).astype(int)
-            | normalized["Lean_Maki-Gami/Hoshin…etc"].fillna(0).astype(int)
+            | normalized["Lean_Maki-Gami/Hoshinâ€¦etc"].fillna(0).astype(int)
         )
-        normalized.drop(columns=["Lean_DDMRP", "Lean_Maki-Gami/Hoshin…etc"], inplace=True)
+        normalized.drop(columns=["Lean_DDMRP", "Lean_Maki-Gami/Hoshinâ€¦etc"], inplace=True)
 
-    jat_column = "Opérations - Juste-à-temps (JAT)"
+    jat_column = "OpÃ©rations - Juste-Ã -temps (JAT)"
     if jat_column in normalized.columns:
-        normalized["Lean_Juste à temps"] = normalized[jat_column].apply(lambda x: 1 if x in [4, 5] else 0)
+        normalized["Lean_Juste Ã  temps"] = normalized[jat_column].apply(lambda x: 1 if x in [4, 5] else 0)
         if "Lean_Just in time" in normalized.columns:
             normalized["Lean_Just in time"] = (
-                normalized["Lean_Juste à temps"].fillna(0).astype(int)
+                normalized["Lean_Juste Ã  temps"].fillna(0).astype(int)
                 | normalized["Lean_Just in time"].fillna(0).astype(int)
             )
     return normalized
@@ -523,10 +580,10 @@ def train_decision_tree(df: pd.DataFrame, target_col: str) -> Tuple[DecisionTree
         "Pays ",
         "Cluster Label",
         "cluster",
-        "Niveau de maturité Lean 4.0",
+        "Niveau de maturitÃ© Lean 4.0",
         "Taille entreprise ",
         "Secteur industriel",
-        "Méthodes Lean ",
+        "MÃ©thodes Lean ",
         "Technologies industrie 4.0",
         "Cluster",
         "Feature_Cluster",
@@ -637,7 +694,7 @@ def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
 
 
 def determine_scenario(cluster_label: str, predicted_dt: str) -> str:
-    order = {"Niveau Initial": 1, "Niveau Intégré": 2, "Niveau Avancé": 3}
+    order = {"Niveau Initial": 1, "Niveau IntÃ©grÃ©": 2, "Niveau AvancÃ©": 3}
     cluster_rank = order.get(cluster_label, 0)
     dt_rank = order.get(predicted_dt, 0)
     if dt_rank < cluster_rank:
@@ -663,10 +720,67 @@ def priority_from_adoption(value: float) -> str:
     return "Low"
 
 
+def roadmap_level_from_gap(value: float) -> str:
+    if value <= -1.2:
+        return "Critical"
+    if value <= -0.8:
+        return "Priority 1"
+    if value <= -0.4:
+        return "Priority 2"
+    return "Monitor"
+
+
+def roadmap_level_from_adoption(value: float) -> str:
+    if value >= 0.75:
+        return "Immediate"
+    if value >= 0.5:
+        return "Next Wave"
+    return "Build Case"
+
+
+def style_priority_cell(value: object) -> str:
+    palette = {
+        "Critical": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
+        "Priority 1": "background-color:#ffedd5;color:#9a3412;font-weight:800;border-radius:8px;",
+        "Priority 2": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
+        "Monitor": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
+        "Immediate": "background-color:#dbeafe;color:#1d4ed8;font-weight:800;border-radius:8px;",
+        "Next Wave": "background-color:#e0f2fe;color:#075985;font-weight:700;border-radius:8px;",
+        "Build Case": "background-color:#ecfeff;color:#155e75;font-weight:700;border-radius:8px;",
+        "High": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
+        "Medium": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
+        "Low": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
+    }
+    return palette.get(str(value), "")
+
+
+def build_roadmap_styler(df: pd.DataFrame, gradient_column: str, gradient_cmap: str, priority_column: str) -> pd.io.formats.style.Styler:
+    return (
+        df.style
+        .background_gradient(subset=[gradient_column], cmap=gradient_cmap)
+        .map(style_priority_cell, subset=[priority_column])
+        .set_properties(**{"text-align": "center"})
+        .set_table_styles([{"selector": "th", "props": [("text-align", "center"), ("font-weight", "700")]}])
+    )
+
+
+def pretty_tree_label(name: str) -> str:
+    clean = (
+        name.replace("Lean_", "Lean: ")
+        .replace("Tech_", "Tech: ")
+        .replace("Organisation apprenante", "Org. apprenante")
+        .replace("Technologies - ", "Tech - ")
+        .replace("Supply Chain - ", "SC - ")
+        .replace("Leadership - ", "Lead - ")
+        .replace("OpÃƒÂ©rations - ", "Ops - ")
+    )
+    return "\\n".join(textwrap.wrap(clean, width=22)) or clean
+
+
 def build_dimension_comparison(entreprise: pd.Series, cluster_target: pd.Series, selected_features: List[str]) -> Tuple[Dict[str, float], Dict[str, float]]:
     dimension_groups = {
         "Leadership": [col for col in selected_features if "Leadership" in col],
-        "Operations": [col for col in selected_features if "Opérations" in col or "Operations" in col],
+        "Operations": [col for col in selected_features if "OpÃ©rations" in col or "Operations" in col],
         "Learning": [col for col in selected_features if "Organisation apprenante" in col],
         "Technology": [col for col in selected_features if "Technologies" in col],
         "Supply Chain": [col for col in selected_features if "Supply Chain" in col],
@@ -707,7 +821,7 @@ def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labe
         st.markdown("### Maturity groups")
         st.dataframe(pd.DataFrame({"Cluster": list(cluster_labels.keys()), "Label": list(cluster_labels.values())}), use_container_width=True)
     with image_col:
-        st.image(load_image(), caption="Modèle de Maturité Lean 4.0", use_container_width=True)
+        st.image(load_image(), caption="ModÃ¨le de MaturitÃ© Lean 4.0", use_container_width=True)
 
 
 def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_map) -> None:
@@ -725,7 +839,7 @@ def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_
                 pd.DataFrame(
                     {
                         "Sous-dimension": list(values["items"].keys()),
-                        "Alpha si supprimée": list(values["items"].values()),
+                        "Alpha si supprimÃ©e": list(values["items"].values()),
                     }
                 ),
                 use_container_width=True,
@@ -752,7 +866,7 @@ def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_
         {
             "Cluster": summary.index,
             "Nombre d'entreprises": summary.values,
-            "Niveau de maturité Lean 4.0": summary.index.map(cluster_label_map),
+            "Niveau de maturitÃ© Lean 4.0": summary.index.map(cluster_label_map),
         }
     )
     st.markdown("### Cluster summary")
@@ -768,7 +882,7 @@ def render_pca_tab(df_clustered: pd.DataFrame, scaled_features: np.ndarray) -> N
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(scaled_features)
     df_pca = pd.DataFrame(pca_result, columns=["PCA1", "PCA2"])
-    df_pca["label"] = df_clustered.loc[df_pca.index, "Niveau de maturité Lean 4.0"].values
+    df_pca["label"] = df_clustered.loc[df_pca.index, "Niveau de maturitÃ© Lean 4.0"].values
     fig, ax = plt.subplots()
     sns.scatterplot(data=df_pca, x="PCA1", y="PCA2", hue="label", palette="Set2", ax=ax)
     ax.set_title("PCA of clusters")
@@ -781,15 +895,15 @@ def render_radar_tab(df_clustered: pd.DataFrame, radar_features: List[str]) -> N
         "Radar comparison",
         "Understand how maturity groups differ both at sub-dimension level and at dimension level. This is useful for management communication and capability storytelling.",
     )
-    cluster_avg = df_clustered.groupby("Niveau de maturité Lean 4.0")[radar_features].mean().dropna(axis=1, how="any")
+    cluster_avg = df_clustered.groupby("Niveau de maturitÃ© Lean 4.0")[radar_features].mean().dropna(axis=1, how="any")
     if cluster_avg.empty:
         st.warning("No radar data available for the selected dimensions.")
         return
 
     palette = {
         "Niveau Initial": ("rgba(0, 0, 139, 1)", "rgba(0, 0, 139, 0.35)"),
-        "Niveau Intégré": ("rgba(255, 99, 71, 1)", "rgba(255, 99, 71, 0.25)"),
-        "Niveau Avancé": ("rgba(60, 179, 113, 1)", "rgba(60, 179, 113, 0.25)"),
+        "Niveau IntÃ©grÃ©": ("rgba(255, 99, 71, 1)", "rgba(255, 99, 71, 0.25)"),
+        "Niveau AvancÃ©": ("rgba(60, 179, 113, 1)", "rgba(60, 179, 113, 0.25)"),
     }
 
     fig = go.Figure()
@@ -874,32 +988,55 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
     )
     importances = pd.Series(clf.feature_importances_, index=X.columns)
     top_importances = importances[importances > 0].sort_values(ascending=False).head(12)
-    st.markdown("### 🔎 Feature Importances")
+    st.markdown("### Feature importances")
     if top_importances.empty:
         st.info("No non-zero feature importances were found for the current decision-tree configuration.")
     else:
         fig, ax = plt.subplots(figsize=(10, 6))
-        top_importances.sort_values().plot(kind="barh", ax=ax, color="steelblue")
-        ax.set_title("Top decision-tree drivers")
+        top_importances.sort_values().plot(kind="barh", ax=ax, color="#1d4ed8")
+        ax.set_title("Top decision-tree drivers", fontsize=14, fontweight="bold")
+        ax.set_xlabel("Importance")
+        ax.set_ylabel("")
         st.pyplot(fig, use_container_width=True)
 
-    st.markdown("### 🎯 Decision Tree Visualization")
-    fig, ax = plt.subplots(figsize=(34, 18))
-    plot_tree(
+    st.markdown("### Decision tree visualization")
+    st.caption("Color-coded business rules rendered left-to-right for easier executive reading.")
+    pretty_labels = [pretty_tree_label(col) for col in X.columns]
+    dot_data = export_graphviz(
         clf,
-        feature_names=list(X.columns),
+        out_file=None,
+        feature_names=pretty_labels,
         class_names=[str(c) for c in clf.classes_],
         filled=True,
         rounded=True,
-        fontsize=10,
-        impurity=False,
         proportion=True,
         precision=2,
-        ax=ax,
+        impurity=False,
+        rotate=True,
+        special_characters=True,
     )
-    ax.set_title("Decision tree classification", fontsize=18)
-    st.pyplot(fig, use_container_width=True)
-
+    dot_data = dot_data.replace(
+        "digraph Tree {",
+        'digraph Tree { graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="1.1"]; node [shape=box, style="rounded,filled", color="#cbd5e1", fontname="Helvetica", fontsize=12, margin="0.22,0.12"]; edge [color="#64748b", penwidth=1.2];',
+    )
+    try:
+        st.graphviz_chart(dot_data, use_container_width=True)
+    except Exception:
+        fig, ax = plt.subplots(figsize=(36, 18))
+        plot_tree(
+            clf,
+            feature_names=pretty_labels,
+            class_names=[str(c) for c in clf.classes_],
+            filled=True,
+            rounded=True,
+            fontsize=10,
+            impurity=False,
+            proportion=True,
+            precision=2,
+            ax=ax,
+        )
+        ax.set_title("Decision tree classification", fontsize=18, fontweight="bold")
+        st.pyplot(fig, use_container_width=True)
 
 def render_application_tab(
     df_clustered: pd.DataFrame,
@@ -981,18 +1118,18 @@ def render_application_tab(
         """,
         unsafe_allow_html=True,
     )
-    st.markdown("## 🧭 Guide d’utilisation personnalisé")
+    st.markdown("## ðŸ§­ Guide dâ€™utilisation personnalisÃ©")
     st.markdown(
         """
-        1. Identification du scénario d’adoption de l’entreprise.
-        2. Lecture des écarts par rapport au cluster cible via les radars et les tableaux d’écart.
-        3. Génération de deux feuilles de route complémentaires :
+        1. Identification du scÃ©nario dâ€™adoption de lâ€™entreprise.
+        2. Lecture des Ã©carts par rapport au cluster cible via les radars et les tableaux dâ€™Ã©cart.
+        3. GÃ©nÃ©ration de deux feuilles de route complÃ©mentaires :
         - feuille de route organisationnelle Lean 4.0
-        - feuille de route technologique et méthodes Lean
-        4. Priorisation et exécution progressive selon le scénario détecté.
+        - feuille de route technologique et mÃ©thodes Lean
+        4. Priorisation et exÃ©cution progressive selon le scÃ©nario dÃ©tectÃ©.
         """
     )
-    st.markdown("## 🔍 Analyse comparative et recommandations")
+    st.markdown("## ðŸ” Analyse comparative et recommandations")
     for idx, recommendation in enumerate(scenario["recommendations"], start=1):
         st.write(f"{idx}. {recommendation}")
 
@@ -1066,12 +1203,43 @@ def render_application_tab(
             "Sous-dimension": negative_gaps.index,
             "Gap": negative_gaps.round(2).values,
             "Priority": [priority_from_gap(x) for x in negative_gaps.values],
+            "Graduation": [roadmap_level_from_gap(x) for x in negative_gaps.values],
         }
     )
-    st.markdown("### 🗺️ Feuille de route personnalisée")
-    st.caption("Cette feuille de route est structurée en deux volets : organisationnel et technologique.")
-    st.markdown("#### 🔻 Sous-dimensions avec un écart négatif (priorité d'amélioration)")
-    st.dataframe(gap_df, use_container_width=True)
+
+    st.markdown("### Feuille de route personnalisee")
+    st.markdown(
+        """
+        <div class="roadmap-card">
+            <div class="roadmap-title">Transformation roadmap</div>
+            <p class="roadmap-copy">This roadmap is split into two synchronized streams: organizational maturity upgrades and technology adoption priorities. Colors indicate urgency and graduation for faster executive reading.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not gap_df.empty:
+        critical_count = int((gap_df["Graduation"] == "Critical").sum())
+        priority_1_count = int((gap_df["Graduation"] == "Priority 1").sum())
+        priority_2_count = int((gap_df["Graduation"] == "Priority 2").sum())
+    else:
+        critical_count = 0
+        priority_1_count = 0
+        priority_2_count = 0
+
+    stat_1, stat_2, stat_3 = st.columns(3)
+    stat_1.metric("Critical organizational gaps", critical_count)
+    stat_2.metric("Priority 1 gaps", priority_1_count)
+    stat_3.metric("Priority 2 gaps", priority_2_count)
+
+    st.markdown("#### Organizational roadmap: negative gaps to close")
+    if gap_df.empty:
+        st.success("No negative maturity gap was detected against the target cluster.")
+    else:
+        st.dataframe(
+            build_roadmap_styler(gap_df, "Gap", "YlOrRd_r", "Graduation"),
+            use_container_width=True,
+        )
 
     lean_cluster_mean = df_clustered.loc[df_clustered["cluster"] == next_cluster, lean_cols].mean()
     tech_cluster_mean = df_clustered.loc[df_clustered["cluster"] == next_cluster, tech_cols].mean()
@@ -1080,27 +1248,41 @@ def render_application_tab(
 
     roadmap_col, tech_col = st.columns(2)
     with roadmap_col:
-        st.markdown("#### 🛠️ Feuille de route technologique : Méthodes Lean à adopter")
+        st.markdown("#### Technological roadmap: Lean methods to adopt")
         lean_df = pd.DataFrame(
             {
                 "Lean method": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
                 "Technologies support": [LEAN_SUPPORT.get(LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")), "") for col in lean_to_adopt.index],
                 "Adoption rate in target cluster": lean_to_adopt.round(2).values,
                 "Priority": [priority_from_adoption(v) for v in lean_to_adopt.values],
+                "Graduation": [roadmap_level_from_adoption(v) for v in lean_to_adopt.values],
             }
         )
-        st.dataframe(lean_df if not lean_df.empty else pd.DataFrame({"Info": ["No priority Lean method to adopt."]}), use_container_width=True)
+        if lean_df.empty:
+            st.info("No priority Lean method to adopt.")
+        else:
+            st.dataframe(
+                build_roadmap_styler(lean_df, "Adoption rate in target cluster", "Blues", "Graduation"),
+                use_container_width=True,
+            )
 
     with tech_col:
-        st.markdown("#### 🤖 Feuille de route technologique : Technologies Industrie 4.0 à adopter")
+        st.markdown("#### Technological roadmap: Industry 4.0 technologies to adopt")
         tech_df = pd.DataFrame(
             {
                 "Technology": [col.replace("Tech_", "") for col in tech_to_adopt.index],
                 "Adoption rate in target cluster": tech_to_adopt.round(2).values,
                 "Priority": [priority_from_adoption(v) for v in tech_to_adopt.values],
+                "Graduation": [roadmap_level_from_adoption(v) for v in tech_to_adopt.values],
             }
         )
-        st.dataframe(tech_df if not tech_df.empty else pd.DataFrame({"Info": ["No priority technology to adopt."]}), use_container_width=True)
+        if tech_df.empty:
+            st.info("No priority technology to adopt.")
+        else:
+            st.dataframe(
+                build_roadmap_styler(tech_df, "Adoption rate in target cluster", "PuBu", "Graduation"),
+                use_container_width=True,
+            )
 
     executive_lines = []
     if not gap_df.empty:
@@ -1110,10 +1292,9 @@ def render_application_tab(
     if not tech_df.empty:
         executive_lines.append(f"Top technology adoption priorities: {', '.join(tech_df['Technology'].head(3).tolist())}.")
     if executive_lines:
-        st.markdown("#### 🎯 Synthèse exécutive")
+        st.markdown("#### Executive summary")
         for line in executive_lines:
             st.write(f"- {line}")
-
 def main() -> None:
     render_hero()
     st.sidebar.title("Control Studio")
@@ -1153,10 +1334,10 @@ def main() -> None:
 
     cluster_means = aligned_df.groupby("cluster")[selected_features].mean()
     cluster_label_map = rank_cluster_labels(cluster_means)
-    aligned_df["Niveau de maturité Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
+    aligned_df["Niveau de maturitÃ© Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
 
     normalized_df = normalize_columns(aligned_df.copy())
-    target_col = "Niveau Maturité" if "Niveau Maturité" in normalized_df.columns else "Niveau de maturité Lean 4.0"
+    target_col = "Niveau MaturitÃ©" if "Niveau MaturitÃ©" in normalized_df.columns else "Niveau de maturitÃ© Lean 4.0"
     clf, X = train_decision_tree(normalized_df, target_col)
 
     render_overview(aligned_df, selected_features, cluster_label_map)
@@ -1197,4 +1378,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
 
