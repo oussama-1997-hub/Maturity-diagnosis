@@ -1320,6 +1320,10 @@ def main() -> None:
         radar_features = [col for col in selected_features if col in df_raw.columns]
 
     feature_frame, scaled_features = prepare_cluster_inputs(df_raw, selected_features)
+    selected_features = feature_frame.columns.tolist()
+    radar_features = [col for col in radar_features if col in selected_features]
+    if not radar_features:
+        radar_features = selected_features.copy()
     aligned_df = df_raw.loc[feature_frame.index].copy()
     selected_company = sidebar["default_company"]
     if selected_company not in aligned_df.index:
