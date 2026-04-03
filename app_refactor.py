@@ -1344,7 +1344,12 @@ def main() -> None:
     if not radar_features:
         radar_features = selected_features.copy()
 
-    cluster_means = aligned_df.groupby("cluster")[selected_features].mean()
+    cluster_feature_frame = aligned_df.filter(items=selected_features)
+    selected_features = cluster_feature_frame.columns.tolist()
+    if not selected_features:
+        st.error("No valid sub-dimension columns are available for cluster aggregation.")
+        st.stop()
+    cluster_means = pd.concat([aligned_df[["cluster"]], cluster_feature_frame], axis=1).groupby("cluster").mean(numeric_only=True)
     cluster_label_map = rank_cluster_labels(cluster_means)
     aligned_df["Niveau de maturitÃ© Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
 
