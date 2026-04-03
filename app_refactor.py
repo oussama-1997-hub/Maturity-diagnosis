@@ -149,6 +149,12 @@ SCENARIO_TEXT = {
     },
 }
 
+SIZE_OPTIONS = [
+    "TPE / Small company",
+    "PME / Medium company",
+    "Grande entreprise / Large company",
+]
+
 
 def render_hero() -> None:
     st.markdown(
@@ -156,36 +162,62 @@ def render_hero() -> None:
         <style>
         .main .block-container {
             max-width: 100%;
-            padding-top: 1.2rem;
-            padding-left: 2rem;
-            padding-right: 2rem;
+            padding-top: 1rem;
+            padding-left: 2.2rem;
+            padding-right: 2.2rem;
             padding-bottom: 2rem;
         }
+        [data-testid="stSidebar"] {
+            background: linear-gradient(180deg, #0f1720 0%, #18242e 100%);
+        }
+        [data-testid="stSidebar"] * {
+            color: #f4f7f8;
+        }
+        [data-testid="stSidebar"] .stSelectbox label,
+        [data-testid="stSidebar"] .stMultiSelect label,
+        [data-testid="stSidebar"] .stSlider label,
+        [data-testid="stSidebar"] .stFileUploader label {
+            color: #dce7eb !important;
+            font-weight: 600;
+        }
+        [data-testid="stSidebar"] .stSelectbox > div > div,
+        [data-testid="stSidebar"] .stMultiSelect > div > div,
+        [data-testid="stSidebar"] .stFileUploader > div {
+            background: rgba(255,255,255,0.07);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
         .hero-box {
-            padding: 1.6rem 1.8rem;
-            border-radius: 24px;
-            background: linear-gradient(135deg, #f7fbff 0%, #eef9f4 100%);
+            padding: 2rem 2.1rem;
+            border-radius: 30px;
+            background:
+                radial-gradient(circle at top right, rgba(42, 157, 143, 0.18), transparent 28%),
+                radial-gradient(circle at bottom left, rgba(233, 196, 106, 0.18), transparent 24%),
+                linear-gradient(135deg, #f7fbff 0%, #eef9f4 52%, #fff8ef 100%);
             border: 1px solid rgba(16, 110, 95, 0.12);
-            margin-bottom: 1rem;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 24px 50px rgba(16, 24, 40, 0.08);
         }
         .hero-title {
-            font-size: 2rem;
-            font-weight: 700;
+            font-size: 2.25rem;
+            font-weight: 800;
             color: #12332b;
-            margin-bottom: 0.4rem;
+            margin-bottom: 0.5rem;
         }
         .hero-copy {
             color: #48615b;
-            font-size: 1rem;
+            font-size: 1.04rem;
             line-height: 1.7;
             margin-bottom: 0;
+            max-width: 72rem;
         }
         .info-card {
             border: 1px solid rgba(18, 51, 43, 0.08);
-            border-radius: 18px;
+            border-radius: 20px;
             padding: 1rem 1.1rem;
-            background: #ffffff;
+            background: linear-gradient(180deg, #ffffff 0%, #f9fbfb 100%);
             min-height: 118px;
+            box-shadow: 0 14px 30px rgba(18, 51, 43, 0.06);
         }
         .card-label {
             color: #6a7f79;
@@ -199,13 +231,97 @@ def render_hero() -> None:
             font-weight: 700;
             color: #14332d;
         }
+        .workflow-grid {
+            display: grid;
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 0.8rem;
+            margin-top: 1.1rem;
+        }
+        .workflow-step {
+            background: rgba(255,255,255,0.74);
+            border: 1px solid rgba(18, 51, 43, 0.08);
+            border-radius: 18px;
+            padding: 0.95rem 1rem;
+        }
+        .workflow-step strong {
+            display: block;
+            color: #14332d;
+            margin-bottom: 0.3rem;
+        }
+        .workflow-step span {
+            color: #5d6f69;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .section-shell {
+            background: linear-gradient(180deg, rgba(255,255,255,0.92), rgba(247,250,249,0.92));
+            border: 1px solid rgba(18, 51, 43, 0.08);
+            border-radius: 24px;
+            padding: 1.2rem 1.25rem;
+            box-shadow: 0 16px 34px rgba(18, 51, 43, 0.06);
+            margin-bottom: 1rem;
+        }
+        .section-kicker {
+            color: #7d8e89;
+            text-transform: uppercase;
+            font-size: 0.76rem;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.25rem;
+        }
+        .section-title {
+            color: #16332b;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        .section-copy {
+            color: #5c6e68;
+            line-height: 1.65;
+            margin-bottom: 0;
+        }
+        div[data-baseweb="tab-list"] {
+            gap: 0.45rem;
+            background: transparent;
+        }
+        button[data-baseweb="tab"] {
+            border-radius: 999px;
+            background: #edf4f2;
+            border: 1px solid rgba(18, 51, 43, 0.08);
+            padding: 0.45rem 0.95rem;
+        }
+        button[data-baseweb="tab"][aria-selected="true"] {
+            background: linear-gradient(135deg, #0d9488, #1d4ed8);
+            color: white !important;
+            border-color: transparent;
+        }
         </style>
         <div class="hero-box">
             <div class="hero-title">Lean 4.0 Studio</div>
             <p class="hero-copy">
-                Full-featured Lean 4.0 analytics with a more structured workflow: data intake, clustering, PCA, radar analysis,
-                heatmaps, decision tree insights, and a guided application module for company-level recommendations.
+                A full decision-support studio for Lean 4.0 maturity diagnosis. The analytics stay intact, but the workflow is
+                now framed for executive review, benchmarking, operational exploration, and company-level recommendation building.
             </p>
+            <div class="workflow-grid">
+                <div class="workflow-step"><strong>01. Intake</strong><span>Load your dataset and frame the diagnosis scope.</span></div>
+                <div class="workflow-step"><strong>02. Cluster</strong><span>Identify maturity groups and cluster strength.</span></div>
+                <div class="workflow-step"><strong>03. Explain</strong><span>Read PCA, radar, and heatmap views clearly.</span></div>
+                <div class="workflow-step"><strong>04. Predict</strong><span>Use the decision tree to interpret maturity drivers.</span></div>
+                <div class="workflow-step"><strong>05. Apply</strong><span>Assess a company from the dataset or a new input.</span></div>
+                <div class="workflow-step"><strong>06. Decide</strong><span>Generate the target-cluster roadmap and priorities.</span></div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_section_intro(kicker: str, title: str, copy: str) -> None:
+    st.markdown(
+        f"""
+        <div class="section-shell">
+            <div class="section-kicker">{kicker}</div>
+            <div class="section-title">{title}</div>
+            <p class="section-copy">{copy}</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -225,15 +341,12 @@ def load_image() -> Image.Image:
 
 
 def build_sidebar(df: pd.DataFrame) -> dict:
-    st.sidebar.title("Workflow")
-    st.sidebar.markdown("Use the controls below to configure the complete analysis pipeline.")
-
     selected_features: List[str] = []
-    st.sidebar.markdown("### 1. Select maturity dimensions")
+    st.sidebar.markdown("### 1. Maturity scope")
     for dimension, sub_dims in DIMENSION_MAP.items():
-        with st.sidebar.expander(dimension, expanded=False):
+        with st.sidebar.expander(dimension, expanded=True):
             selected = st.multiselect(
-                f"Sub-dimensions for {dimension}",
+                f"Include sub-dimensions from {dimension}",
                 sub_dims,
                 default=sub_dims,
                 key=f"features_{dimension}",
@@ -241,7 +354,7 @@ def build_sidebar(df: pd.DataFrame) -> dict:
             selected_features.extend(selected)
 
     radar_dimensions = st.sidebar.multiselect(
-        "### 2. Radar dimensions",
+        "### 2. Radar profile dimensions",
         list(DIMENSION_MAP.keys()),
         default=list(DIMENSION_MAP.keys()),
     )
@@ -250,21 +363,20 @@ def build_sidebar(df: pd.DataFrame) -> dict:
         radar_features.extend(DIMENSION_MAP[dimension])
 
     st.sidebar.markdown("### 3. Clustering settings")
-    k_range = st.sidebar.slider("K range", 2, 10, (2, 6))
+    k_range = st.sidebar.slider("Cluster search range", 2, 10, (2, 6))
     k_values = list(range(k_range[0], k_range[1] + 1))
     default_k = 3 if 3 in k_values else k_values[0]
-    final_k = st.sidebar.selectbox("Final number of clusters", k_values, index=k_values.index(default_k))
+    final_k = st.sidebar.selectbox("Operational number of clusters", k_values, index=k_values.index(default_k))
 
     company_options = df.index.tolist()
     default_company = 4 if len(company_options) > 4 else 0
-    selected_company = st.sidebar.selectbox("### 4. Company for application module", company_options, index=default_company)
 
     return {
         "selected_features": selected_features,
         "radar_features": radar_features,
         "k_range": k_range,
         "final_k": final_k,
-        "selected_company": selected_company,
+        "default_company": company_options[default_company],
     }
 
 
@@ -381,8 +493,11 @@ def company_dimension_table(entreprise: pd.Series, selected_features: List[str])
 
 
 def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
-    st.markdown("### New company questionnaire")
-    st.caption("Use the Google Form links or fill in the in-app assessment below.")
+    render_section_intro(
+        "New Intake",
+        "Capture a new company assessment",
+        "Use the external Google Form or complete the in-app questionnaire. This keeps the same analytics pipeline while making intake easier for future client companies.",
+    )
 
     link_col_1, link_col_2 = st.columns(2)
     with link_col_1:
@@ -392,13 +507,19 @@ def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
 
     with st.form("manual_company_form", clear_on_submit=False):
         meta_1, meta_2, meta_3 = st.columns(3)
-        company_name = meta_1.text_input("Company name", value="Nouvelle entreprise")
-        company_sector = meta_2.text_input("Secteur industriel", value="N/A")
-        company_size = meta_3.text_input("Taille entreprise", value="N/A")
+        company_name = meta_1.text_input("Company name", value="New client company")
+        sector_candidates = sorted([str(val) for val in df_reference.get("Secteur industriel", pd.Series(dtype=object)).dropna().unique().tolist()])
+        if "Other" not in sector_candidates:
+            sector_candidates.append("Other")
+        company_sector_choice = meta_2.selectbox("Industrial sector", sector_candidates, index=0 if sector_candidates else None)
+        company_size = meta_3.selectbox("Company size", SIZE_OPTIONS, index=1)
+        custom_sector = st.text_input("Custom sector label", value="", placeholder="Fill only if you selected Other")
 
         manual_scores: Dict[str, float] = {}
-        for dimension, sub_dims in DIMENSION_MAP.items():
-            with st.expander(dimension, expanded=True):
+        dim_cols = st.columns(len(DIMENSION_MAP))
+        for col, (dimension, sub_dims) in zip(dim_cols, DIMENSION_MAP.items()):
+            with col:
+                st.markdown(f"**{dimension}**")
                 for sub_dim in sub_dims:
                     manual_scores[sub_dim] = st.slider(
                         sub_dim.strip(),
@@ -431,7 +552,7 @@ def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
 
     manual_company = pd.Series(0, index=df_reference.columns, dtype=object)
     manual_company["Nom entreprise"] = company_name
-    manual_company["Secteur industriel"] = company_sector
+    manual_company["Secteur industriel"] = custom_sector if company_sector_choice == "Other" and custom_sector.strip() else company_sector_choice
     manual_company["Taille entreprise "] = company_size
 
     for col, value in manual_scores.items():
@@ -457,6 +578,11 @@ def determine_scenario(cluster_label: str, predicted_dt: str) -> str:
 
 
 def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labels: Dict[int, str]) -> None:
+    render_section_intro(
+        "Executive Snapshot",
+        "Portfolio overview",
+        "Start with the overall size of the dataset, the breadth of the maturity model, and the maturity-group structure before moving into detailed analytics.",
+    )
     dataset_col, image_col = st.columns([1.1, 0.9])
     with dataset_col:
         st.subheader("Overview")
@@ -474,12 +600,17 @@ def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labe
                     unsafe_allow_html=True,
                 )
         st.markdown("### Maturity groups")
-        st.write(pd.DataFrame({"Cluster": list(cluster_labels.keys()), "Label": list(cluster_labels.values())}))
+        st.dataframe(pd.DataFrame({"Cluster": list(cluster_labels.keys()), "Label": list(cluster_labels.values())}), use_container_width=True)
     with image_col:
         st.image(load_image(), caption="Modèle de Maturité Lean 4.0", use_container_width=True)
 
 
 def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_map) -> None:
+    render_section_intro(
+        "Analytics",
+        "Clustering and reliability",
+        "Validate the structure of the maturity model, inspect the elbow and silhouette behavior, and confirm the operational cluster allocation used in the rest of the app.",
+    )
     st.subheader("Reliability snapshot")
     st.success("Cronbach's Alpha global for the selected maturity columns: 0.934")
     for group, values in CRONBACH_DATA.items():
@@ -524,6 +655,11 @@ def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_
 
 
 def render_pca_tab(df_clustered: pd.DataFrame, scaled_features: np.ndarray) -> None:
+    render_section_intro(
+        "Exploration",
+        "PCA cluster map",
+        "Use PCA to see how clearly the maturity groups separate in reduced-dimensional space and where overlap still exists between company profiles.",
+    )
     pca = PCA(n_components=2)
     pca_result = pca.fit_transform(scaled_features)
     df_pca = pd.DataFrame(pca_result, columns=["PCA1", "PCA2"])
@@ -535,6 +671,11 @@ def render_pca_tab(df_clustered: pd.DataFrame, scaled_features: np.ndarray) -> N
 
 
 def render_radar_tab(df_clustered: pd.DataFrame, radar_features: List[str]) -> None:
+    render_section_intro(
+        "Benchmarking",
+        "Radar comparison",
+        "Understand how maturity groups differ both at sub-dimension level and at dimension level. This is useful for management communication and capability storytelling.",
+    )
     cluster_avg = df_clustered.groupby("Niveau de maturité Lean 4.0")[radar_features].mean().dropna(axis=1, how="any")
     if cluster_avg.empty:
         st.warning("No radar data available for the selected dimensions.")
@@ -587,6 +728,11 @@ def render_radar_tab(df_clustered: pd.DataFrame, radar_features: List[str]) -> N
 
 
 def render_heatmaps_tab(df_clustered: pd.DataFrame, selected_features: List[str]) -> None:
+    render_section_intro(
+        "Adoption Patterns",
+        "Heatmaps",
+        "Compare maturity scores, Lean-method adoption, and Industry 4.0 technology usage across the cluster structure to identify the strongest operational patterns.",
+    )
     avg_scores = df_clustered.groupby("cluster")[selected_features].mean()
     lean_cols = [col for col in df_clustered.columns if col.startswith("Lean_")]
     tech_cols = [col for col in df_clustered.columns if col.startswith("Tech_")]
@@ -616,6 +762,11 @@ def render_heatmaps_tab(df_clustered: pd.DataFrame, selected_features: List[str]
 
 
 def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> None:
+    render_section_intro(
+        "Interpretability",
+        "Decision tree and key drivers",
+        "Use the decision tree to explain which Lean methods and technology adoption patterns are most influential in the maturity classification logic.",
+    )
     importances = pd.Series(clf.feature_importances_, index=X.columns)
     top_importances = importances[importances > 0].sort_values(ascending=False).head(20)
 
@@ -653,13 +804,19 @@ def render_application_tab(
     X: pd.DataFrame,
     selected_company,
 ) -> None:
-    mode = st.radio(
-        "Application mode",
-        ["Existing company from dataset", "New company input"],
-        horizontal=True,
+    render_section_intro(
+        "Application",
+        "Company diagnosis workflow",
+        "Run a guided diagnosis for an existing company from the dataset or a newly assessed company, then generate the target-cluster comparison and recommended roadmap.",
     )
+    mode = st.radio("Application mode", ["Existing company from dataset", "New company input"], horizontal=True)
 
     if mode == "Existing company from dataset":
+        selected_company = st.selectbox(
+            "Choose the company to diagnose",
+            df_clustered.index.tolist(),
+            index=df_clustered.index.tolist().index(selected_company) if selected_company in df_clustered.index else 0,
+        )
         entreprise = df_clustered.loc[selected_company]
         company_label = f"Dataset company #{selected_company}"
         st.markdown("### Company profile")
@@ -702,8 +859,8 @@ def render_application_tab(
     predicted_dt = clf.predict(features_dt_new)[0]
 
     cluster_col, tree_col = st.columns(2)
-    cluster_col.metric("Organizational maturity (KMeans)", predicted_cluster_label)
-    tree_col.metric("Technological maturity (Decision Tree)", predicted_dt)
+    cluster_col.metric("Organizational maturity", predicted_cluster_label)
+    tree_col.metric("Technological maturity", predicted_dt)
     st.caption(f"Analysis target: {company_label}")
 
     scenario_key = determine_scenario(predicted_cluster_label, predicted_dt)
@@ -792,7 +949,16 @@ def render_application_tab(
 
 def main() -> None:
     render_hero()
-    uploaded_file = st.sidebar.file_uploader("Upload Excel dataset", type=["xlsx"])
+    st.sidebar.title("Control Studio")
+    st.sidebar.caption("Configure the scope of the diagnosis. The application module will handle company-level assessment separately.")
+    dataset_mode = st.sidebar.radio(
+        "Dataset source",
+        ["Repository dataset", "Upload custom Excel"],
+        index=0,
+    )
+    uploaded_file = None
+    if dataset_mode == "Upload custom Excel":
+        uploaded_file = st.sidebar.file_uploader("Upload Excel dataset", type=["xlsx"])
     df_raw = load_dataset(uploaded_file)
     sidebar = build_sidebar(df_raw)
 
@@ -807,7 +973,7 @@ def main() -> None:
 
     feature_frame, scaled_features = prepare_cluster_inputs(df_raw, selected_features)
     aligned_df = df_raw.loc[feature_frame.index].copy()
-    selected_company = sidebar["selected_company"]
+    selected_company = sidebar["default_company"]
     if selected_company not in aligned_df.index:
         selected_company = aligned_df.index[0]
         st.sidebar.warning("The selected company had missing values for the active sub-dimensions. The first valid company was selected instead.")
@@ -830,12 +996,12 @@ def main() -> None:
 
     tabs = st.tabs(
         [
-            "1. Clustering",
-            "2. PCA",
-            "3. Radar",
-            "4. Heatmaps",
-            "5. Decision Tree",
-            "6. Application",
+            "01 Clustering",
+            "02 PCA",
+            "03 Radar",
+            "04 Heatmaps",
+            "05 Decision Tree",
+            "06 Application",
         ]
     )
 
