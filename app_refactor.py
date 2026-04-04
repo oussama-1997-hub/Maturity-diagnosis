@@ -171,6 +171,23 @@ SIZE_OPTIONS = [
     "Grande entreprise / Large company",
 ]
 
+DIMENSION_WEIGHTS = {
+    "Leadership": 0.2057,
+    "Supply Chain": 0.1996,
+    "Opérations": 0.1990,
+    "Technologies": 0.1904,
+    "Organisation Apprenante": 0.2053,
+}
+
+TOPSIS_REFERENCE_SCORES = {
+    1: 73.64, 2: 51.26, 3: 75.92, 4: 42.47, 5: 68.60, 6: 42.38, 7: 71.15, 8: 39.47, 9: 31.46, 10: 72.06,
+    11: 76.09, 12: 5.97, 13: 65.55, 14: 65.85, 15: 83.74, 16: 71.24, 17: 58.22, 18: 55.05, 19: 64.45, 20: 72.98,
+    21: 51.77, 22: 22.58, 23: 69.25, 24: 49.68, 25: 65.20, 26: 51.01, 27: 56.12, 28: 55.90, 29: 75.91, 30: 59.98,
+    31: 50.23, 32: 71.86, 33: 27.88, 34: 72.44, 35: 44.49, 36: 93.56, 37: 64.23, 38: 59.53, 39: 46.58, 40: 44.22,
+    41: 25.00, 42: 34.81, 43: 62.19, 44: 55.89, 45: 39.08, 46: 67.34, 47: 65.07, 48: 73.80, 49: 56.97, 50: 49.64,
+    51: 27.92, 52: 53.42, 53: 62.37, 54: 58.93, 55: 51.36, 56: 83.09, 57: 30.23, 58: 49.61, 59: 58.68,
+}
+
 
 def render_hero() -> None:
     st.markdown(
@@ -798,6 +815,84 @@ def build_dimension_comparison(entreprise: pd.Series, cluster_target: pd.Series,
     return company_scores, target_scores
 
 
+def compute_weighted_topsis_score(entreprise: pd.Series, selected_features: List[str]) -> Tuple[float, pd.DataFrame]:
+    rows = []
+    for dimension, cols in DIMENSION_MAP.items():
+        valid_cols = [col for col in cols if col in selected_features and col in entreprise.index]
+        if not valid_cols:
+            continue
+        dimension_weight = DIMENSION_WEIGHTS.get(dimension, 0.0)
+        sub_weight = dimension_weight / len(valid_cols)
+        for col in valid_cols:
+            value = float(pd.to_numeric(entreprise.get(col, np.nan), errors="coerce"))
+            if not np.isnan(value):
+                rows.append(
+                    {
+                        "dimension": dimension,
+                        "sub_dimension": col,
+                        "score": value,
+                        "weight": sub_weight,
+                    }
+                )
+
+    score_df = pd.DataFrame(rows)
+    if score_df.empty:
+        return 0.0, pd.DataFrame()
+
+    total_weight = score_df["weight"].sum()
+    if total_weight <= 0:
+        return 0.0, pd.DataFrame()
+    score_df["weight"] = score_df["weight"] / total_weight
+    score_df["weighted_score"] = score_df["score"] * score_df["weight"]
+    score_df["ideal"] = 5.0 * score_df["weight"]
+    score_df["anti_ideal"] = 1.0 * score_df["weight"]
+
+    d_plus = float(np.sqrt(((score_df["weighted_score"] - score_df["ideal"]) ** 2).sum()))
+    d_minus = float(np.sqrt(((score_df["weighted_score"] - score_df["anti_ideal"]) ** 2).sum()))
+    score = 0.0 if (d_plus + d_minus) == 0 else (d_minus / (d_plus + d_minus)) * 100
+
+    dimension_scores = score_df.groupby("dimension")[["score"]].mean()
+    return round(score, 2), dimension_scores
+
+
+def render_final_maturity_result(scenario_key: str, organizational_score: float) -> None:
+    prefix_map = {"tech_lag": "RT", "org_lag": "RO", "aligned": "AL"}
+    active_prefix = prefix_map.get(scenario_key, "AL")
+    circle_classes = {
+        "RO": "background:#ef4444;color:#ffffff;",
+        "AL": "background:#84cc16;color:#ffffff;",
+        "RT": "background:#ef4444;color:#ffffff;",
+    }
+    inactive_style = "background:#f3f4f6;color:#94a3b8;border:2px solid #cbd5e1;"
+
+    def style_for(label: str) -> str:
+        return circle_classes[label] if label == active_prefix else inactive_style
+
+    st.markdown(
+        f"""
+        <div class="roadmap-card" style="padding:1.2rem 1.3rem;">
+            <div class="roadmap-title">Résultat final de l’évaluation Lean 4.0</div>
+            <p class="roadmap-copy">Le score de maturité organisationnelle est enrichi par un indice d’alignement technologique pour produire une notation synthétique de type RT-75, RO-68 ou AL-89.</p>
+            <div style="display:flex;align-items:center;gap:1.2rem;margin-top:1rem;">
+                <div style="display:flex;flex-direction:column;gap:0.8rem;align-items:center;min-width:88px;">
+                    <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('RO')}">RO</div>
+                    <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('AL')}">AL</div>
+                    <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('RT')}">RT</div>
+                </div>
+                <div style="flex:1;display:flex;justify-content:center;">
+                    <div style="min-width:180px;border-radius:18px;border:1px solid #cbd5e1;background:linear-gradient(180deg,#ffffff,#f8fafc);padding:1rem 1.4rem;box-shadow:0 12px 24px rgba(15,23,42,0.08);text-align:center;">
+                        <div style="font-size:0.85rem;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">Notation synthétique</div>
+                        <div style="font-size:2rem;font-weight:900;color:#0f172a;line-height:1.2;margin-top:0.3rem;">{active_prefix}-{int(round(organizational_score))}</div>
+                        <div style="font-size:1rem;color:#334155;margin-top:0.15rem;">Score TOPSIS : {organizational_score:.2f}/100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labels: Dict[int, str]) -> None:
     render_section_intro(
         "Executive Snapshot",
@@ -1115,6 +1210,11 @@ def render_application_tab(
     features_dt_new = pd.DataFrame([entreprise]).reindex(columns=X.columns, fill_value=0)
     predicted_dt = clf.predict(features_dt_new)[0]
 
+    if mode == "Entreprise existante de la base" and selected_company in TOPSIS_REFERENCE_SCORES:
+        organizational_score = TOPSIS_REFERENCE_SCORES[selected_company]
+    else:
+        organizational_score, _ = compute_weighted_topsis_score(entreprise, selected_features)
+
     cluster_col, tree_col = st.columns(2)
     cluster_col.metric("Maturité organisationnelle", predicted_cluster_label)
     tree_col.metric("Maturité technologique", predicted_dt)
@@ -1122,6 +1222,7 @@ def render_application_tab(
 
     scenario_key = determine_scenario(predicted_cluster_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
+    render_final_maturity_result(scenario_key, organizational_score)
     st.markdown(
         f"""
         <div class="hero-box" style="padding:1.1rem 1.2rem; margin-top:0.8rem;">
@@ -1131,6 +1232,18 @@ def render_application_tab(
         """,
         unsafe_allow_html=True,
     )
+    with st.expander("Méthode de calcul du score global Lean 4.0", expanded=False):
+        st.markdown(
+            """
+            Le résultat final combine :
+            1. Un score continu de maturité organisationnelle calculé par la logique TOPSIS pondérée.
+            2. Un indice qualitatif d’alignement entre maturité organisationnelle et maturité technologique :
+               `RT` pour retard technologique, `RO` pour retard organisationnel et `AL` pour alignement.
+
+            La note finale affichée prend donc la forme :
+            `RT-75`, `RO-68` ou `AL-89`.
+            """
+        )
     st.markdown("## 🧭 Guide d’utilisation personnalisé")
     st.markdown(
         """
