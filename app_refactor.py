@@ -171,6 +171,25 @@ SIZE_OPTIONS = [
     "Grande entreprise / Large company",
 ]
 
+QUESTION_MAP = {
+    "Leadership - Engagement Lean ": "Dans quelle mesure la direction est-elle réellement engagée dans la démarche Lean au sein de votre entreprise ?",
+    "Leadership - Engagement DT": "Dans quelle mesure la direction est-elle engagée dans la transformation digitale et l’Industrie 4.0 ?",
+    "Leadership - Stratégie ": "Dans quelle mesure la stratégie de l’entreprise intègre-t-elle clairement la transformation Lean 4.0 ?",
+    "Leadership - Communication": "Dans quelle mesure la communication autour de la transformation Lean 4.0 est-elle claire, régulière et partagée ?",
+    "Supply Chain - Collaboration inter-organisationnelle": "Dans quelle mesure votre entreprise collabore-t-elle efficacement avec ses partenaires de la chaîne logistique ?",
+    "Supply Chain - Traçabilité": "Dans quelle mesure les flux, produits et informations sont-ils traçables tout au long de la supply chain ?",
+    "Supply Chain - Impact sur les employées": "Dans quelle mesure les transformations de la supply chain prennent-elles en compte l’impact sur les employés ?",
+    "Opérations - Standardisation des processus": "Dans quelle mesure les processus opérationnels sont-ils standardisés et maîtrisés ?",
+    "Opérations - Juste-à-temps (JAT)": "Dans quelle mesure les principes du juste-à-temps sont-ils appliqués dans vos opérations ?",
+    "Opérations - Gestion des résistances": "Dans quelle mesure votre entreprise gère-t-elle efficacement les résistances au changement ?",
+    "Technologies - Connectivité et gestion des données": "Dans quelle mesure les systèmes de votre entreprise sont-ils connectés et les données exploitées efficacement ?",
+    "Technologies - Automatisation": "Dans quelle mesure les opérations et processus sont-ils automatisés ?",
+    "Technologies - Pilotage du changement": "Dans quelle mesure le déploiement technologique est-il piloté et accompagné de manière structurée ?",
+    "Organisation apprenante  - Formation et développement des compétences": "Dans quelle mesure l’entreprise développe-t-elle les compétences nécessaires à la transformation Lean 4.0 ?",
+    "Organisation apprenante  - Collaboration et Partage des Connaissances": "Dans quelle mesure la collaboration interne et le partage des connaissances sont-ils encouragés ?",
+    "Organisation apprenante  - Flexibilité organisationnelle": "Dans quelle mesure l’organisation est-elle flexible et capable de s’adapter rapidement ?",
+}
+
 DIMENSION_WEIGHTS = {
     "Leadership": 0.2057,
     "Supply Chain": 0.1996,
@@ -639,34 +658,37 @@ def company_dimension_table(entreprise: pd.Series, selected_features: List[str])
 def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
     render_section_intro(
         "New Intake",
-        "Capture a new company assessment",
-        "Use the external Google Form or complete the in-app questionnaire. This keeps the same analytics pipeline while making intake easier for future client companies.",
+        "Capture d’un nouveau questionnaire",
+        "Renseignez directement les réponses de l’entreprise sur la plateforme. Chaque score correspond à une question liée à une sous-dimension du modèle Lean 4.0.",
     )
 
     link_col_1, link_col_2 = st.columns(2)
     with link_col_1:
-        st.link_button("Open questionnaire editor", "https://docs.google.com/forms/d/18q1_-kOGChcj4DbGp7onkGYWFRK9_EW382yCCRSH4U8/edit", use_container_width=True)
+        st.link_button("Ouvrir l’éditeur du questionnaire", "https://docs.google.com/forms/d/18q1_-kOGChcj4DbGp7onkGYWFRK9_EW382yCCRSH4U8/edit", use_container_width=True)
     with link_col_2:
-        st.link_button("Open respondent form", "https://forms.gle/Uc7689Y6Y45qpiTo7", use_container_width=True)
+        st.link_button("Ouvrir le formulaire répondant", "https://forms.gle/Uc7689Y6Y45qpiTo7", use_container_width=True)
 
     with st.form("manual_company_form", clear_on_submit=False):
         meta_1, meta_2, meta_3 = st.columns(3)
-        company_name = meta_1.text_input("Company name", value="New client company")
+        company_name = meta_1.text_input("Nom de l’entreprise", value="Nouvelle entreprise cliente")
         sector_candidates = sorted([str(val) for val in df_reference.get("Secteur industriel", pd.Series(dtype=object)).dropna().unique().tolist()])
-        if "Other" not in sector_candidates:
-            sector_candidates.append("Other")
-        company_sector_choice = meta_2.selectbox("Industrial sector", sector_candidates, index=0 if sector_candidates else None)
-        company_size = meta_3.selectbox("Company size", SIZE_OPTIONS, index=1)
-        custom_sector = st.text_input("Custom sector label", value="", placeholder="Fill only if you selected Other")
+        if "Autre" not in sector_candidates:
+            sector_candidates.append("Autre")
+        company_sector_choice = meta_2.selectbox("Secteur industriel", sector_candidates, index=0 if sector_candidates else None)
+        company_size = meta_3.selectbox("Taille de l’entreprise", SIZE_OPTIONS, index=1)
+        custom_sector = st.text_input("Secteur personnalisé", value="", placeholder="À remplir seulement si vous choisissez Autre")
 
         manual_scores: Dict[str, float] = {}
-        dim_cols = st.columns(len(DIMENSION_MAP))
-        for col, (dimension, sub_dims) in zip(dim_cols, DIMENSION_MAP.items()):
-            with col:
-                st.markdown(f"**{dimension}**")
+        st.markdown("### Questionnaire de maturité Lean 4.0")
+        st.caption("Attribuez une note entière de 1 à 5 pour chaque question.")
+        for dimension, sub_dims in DIMENSION_MAP.items():
+            with st.expander(f"🧩 {dimension}", expanded=True):
                 for sub_dim in sub_dims:
+                    question_text = QUESTION_MAP.get(sub_dim, sub_dim.strip())
+                    st.markdown(f"**{question_text}**")
+                    st.caption(f"Sous-dimension : {sub_dim.strip()}")
                     manual_scores[sub_dim] = st.slider(
-                        sub_dim.strip(),
+                        "Score",
                         min_value=1,
                         max_value=5,
                         value=3,
@@ -680,23 +702,23 @@ def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
         tech_options = {col.replace("Tech_", ""): col for col in tech_cols}
 
         selected_lean = st.multiselect(
-            "Lean methods already adopted",
+            "Méthodes Lean déjà adoptées",
             options=sorted(lean_options.keys()),
         )
         selected_tech = st.multiselect(
-            "Industry 4.0 technologies already adopted",
+            "Technologies Industrie 4.0 déjà adoptées",
             options=sorted(tech_options.keys()),
         )
 
-        submitted = st.form_submit_button("Analyze new company", use_container_width=True)
+        submitted = st.form_submit_button("Analyser la nouvelle entreprise", use_container_width=True)
 
     if not submitted:
-        st.info("Complete the questionnaire and click 'Analyze new company' to generate the full diagnosis.")
+        st.info("Complétez les questions puis cliquez sur « Analyser la nouvelle entreprise » pour générer le diagnostic complet.")
         return pd.Series(dtype=object)
 
     manual_company = pd.Series(0, index=df_reference.columns, dtype=object)
     manual_company["Nom entreprise"] = company_name
-    manual_company["Secteur industriel"] = custom_sector if company_sector_choice == "Other" and custom_sector.strip() else company_sector_choice
+    manual_company["Secteur industriel"] = custom_sector if company_sector_choice == "Autre" and custom_sector.strip() else company_sector_choice
     manual_company["Taille entreprise "] = company_size
 
     for col, value in manual_scores.items():
