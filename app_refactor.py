@@ -745,50 +745,25 @@ def determine_scenario(cluster_label: str, predicted_dt: str) -> str:
 
 def priority_from_gap(value: float) -> str:
     if value <= -1.0:
-        return "High"
+        return "Élevé"
     if value <= -0.5:
-        return "Medium"
-    return "Low"
+        return "Moyen"
+    return "Faible"
 
 
 def priority_from_adoption(value: float) -> str:
     if value >= 0.7:
-        return "High"
+        return "Élevé"
     if value >= 0.4:
-        return "Medium"
-    return "Low"
-
-
-def roadmap_level_from_gap(value: float) -> str:
-    if value <= -1.2:
-        return "Critical"
-    if value <= -0.8:
-        return "Priority 1"
-    if value <= -0.4:
-        return "Priority 2"
-    return "Monitor"
-
-
-def roadmap_level_from_adoption(value: float) -> str:
-    if value >= 0.75:
-        return "Immediate"
-    if value >= 0.5:
-        return "Next Wave"
-    return "Build Case"
+        return "Moyen"
+    return "Faible"
 
 
 def style_priority_cell(value: object) -> str:
     palette = {
-        "Critical": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
-        "Priority 1": "background-color:#ffedd5;color:#9a3412;font-weight:800;border-radius:8px;",
-        "Priority 2": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
-        "Monitor": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
-        "Immediate": "background-color:#dbeafe;color:#1d4ed8;font-weight:800;border-radius:8px;",
-        "Next Wave": "background-color:#e0f2fe;color:#075985;font-weight:700;border-radius:8px;",
-        "Build Case": "background-color:#ecfeff;color:#155e75;font-weight:700;border-radius:8px;",
-        "High": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
-        "Medium": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
-        "Low": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
+        "Élevé": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
+        "Moyen": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
+        "Faible": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
     }
     return palette.get(str(value), "")
 
@@ -1359,9 +1334,8 @@ def render_application_tab(
     gap_df = pd.DataFrame(
         {
             "Sous-dimension": negative_gaps.index,
-            "Gap": negative_gaps.round(2).values,
-            "Priority": [priority_from_gap(x) for x in negative_gaps.values],
-            "Graduation": [roadmap_level_from_gap(x) for x in negative_gaps.values],
+            "Écart": negative_gaps.round(2).values,
+            "Priorité": [priority_from_gap(x) for x in negative_gaps.values],
         }
     )
 
@@ -1377,25 +1351,25 @@ def render_application_tab(
     )
 
     if not gap_df.empty:
-        critical_count = int((gap_df["Graduation"] == "Critical").sum())
-        priority_1_count = int((gap_df["Graduation"] == "Priority 1").sum())
-        priority_2_count = int((gap_df["Graduation"] == "Priority 2").sum())
+        high_count = int((gap_df["Priorité"] == "Élevé").sum())
+        medium_count = int((gap_df["Priorité"] == "Moyen").sum())
+        low_count = int((gap_df["Priorité"] == "Faible").sum())
     else:
-        critical_count = 0
-        priority_1_count = 0
-        priority_2_count = 0
+        high_count = 0
+        medium_count = 0
+        low_count = 0
 
     stat_1, stat_2, stat_3 = st.columns(3)
-    stat_1.metric("Écarts critiques", critical_count)
-    stat_2.metric("Écarts priorité 1", priority_1_count)
-    stat_3.metric("Écarts priorité 2", priority_2_count)
+    stat_1.metric("Priorité élevée", high_count)
+    stat_2.metric("Priorité moyenne", medium_count)
+    stat_3.metric("Priorité faible", low_count)
 
     st.markdown("#### Feuille de route organisationnelle : écarts à résorber")
     if gap_df.empty:
         st.success("Aucun écart négatif détecté par rapport au cluster cible.")
     else:
         st.dataframe(
-            build_roadmap_styler(gap_df, "Gap", "YlOrRd_r", "Graduation"),
+            build_roadmap_styler(gap_df, "Écart", "YlOrRd_r", "Priorité"),
             use_container_width=True,
         )
 
@@ -1410,17 +1384,15 @@ def render_application_tab(
         lean_df = pd.DataFrame(
             {
                 "Méthode Lean": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
-                "Technologies support": [LEAN_SUPPORT.get(LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")), "") for col in lean_to_adopt.index],
                 "Taux d'adoption dans le cluster cible": lean_to_adopt.round(2).values,
                 "Priorité": [priority_from_adoption(v) for v in lean_to_adopt.values],
-                "Graduation": [roadmap_level_from_adoption(v) for v in lean_to_adopt.values],
             }
         )
         if lean_df.empty:
             st.info("Aucune méthode Lean prioritaire à adopter.")
         else:
             st.dataframe(
-                build_roadmap_styler(lean_df, "Taux d'adoption dans le cluster cible", "Blues", "Graduation"),
+                build_roadmap_styler(lean_df, "Taux d'adoption dans le cluster cible", "Blues", "Priorité"),
                 use_container_width=True,
             )
 
@@ -1431,14 +1403,13 @@ def render_application_tab(
                 "Technologie": [col.replace("Tech_", "") for col in tech_to_adopt.index],
                 "Taux d'adoption dans le cluster cible": tech_to_adopt.round(2).values,
                 "Priorité": [priority_from_adoption(v) for v in tech_to_adopt.values],
-                "Graduation": [roadmap_level_from_adoption(v) for v in tech_to_adopt.values],
             }
         )
         if tech_df.empty:
             st.info("Aucune technologie prioritaire à adopter.")
         else:
             st.dataframe(
-                build_roadmap_styler(tech_df, "Taux d'adoption dans le cluster cible", "PuBu", "Graduation"),
+                build_roadmap_styler(tech_df, "Taux d'adoption dans le cluster cible", "PuBu", "Priorité"),
                 use_container_width=True,
             )
 
