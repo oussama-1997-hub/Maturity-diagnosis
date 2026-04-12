@@ -473,9 +473,12 @@ def render_section_intro(kicker: str, title: str, copy: str) -> None:
 
 @st.cache_data(show_spinner=False)
 def load_dataset(uploaded_file) -> pd.DataFrame:
-    if uploaded_file is not None:
-        return pd.read_excel(uploaded_file)
-    return pd.read_excel(DEFAULT_DATASET)
+    df = pd.read_excel(uploaded_file) if uploaded_file is not None else pd.read_excel(DEFAULT_DATASET)
+    df = df.reset_index(drop=True).copy()
+    if "Num" in df.columns:
+        df = df.drop(columns=["Num"])
+    df.insert(0, "Num", np.arange(1, len(df) + 1))
+    return df
 
 
 @st.cache_data(show_spinner=False)
