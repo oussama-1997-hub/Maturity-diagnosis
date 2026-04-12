@@ -865,7 +865,7 @@ def compute_weighted_topsis_score(entreprise: pd.Series, selected_features: List
     return round(score, 2), dimension_scores
 
 
-def render_final_maturity_result(scenario_key: str, organizational_score: float) -> None:
+def render_final_maturity_result(scenario_key: str, organizational_score: float, company_reference: str | None = None) -> None:
     prefix_map = {"tech_lag": "RT", "org_lag": "RO", "aligned": "AL"}
     active_prefix = prefix_map.get(scenario_key, "AL")
     circle_classes = {
@@ -883,6 +883,7 @@ def render_final_maturity_result(scenario_key: str, organizational_score: float)
         <div class="roadmap-card" style="padding:1.2rem 1.3rem;">
             <div class="roadmap-title">Résultat final de l’évaluation Lean 4.0</div>
             <p class="roadmap-copy">Le score de maturité organisationnelle est enrichi par un indice d’alignement technologique pour produire une notation synthétique de type RT-75, RO-68 ou AL-89.</p>
+            {"<p class='roadmap-copy' style='margin-top:0.35rem;'><strong>Entreprise analysée :</strong> " + company_reference + "</p>" if company_reference else ""}
             <div style="display:flex;align-items:center;gap:1.2rem;margin-top:1rem;">
                 <div style="display:flex;flex-direction:column;gap:0.8rem;align-items:center;min-width:88px;">
                     <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('RO')}">RO</div>
@@ -1264,7 +1265,7 @@ def render_application_tab(
 
     scenario_key = determine_scenario(actual_organizational_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
-    render_final_maturity_result(scenario_key, organizational_score)
+    render_final_maturity_result(scenario_key, organizational_score, company_label)
     st.markdown(
         f"""
         <div class="hero-box" style="padding:1.1rem 1.2rem; margin-top:0.8rem;">
