@@ -483,6 +483,16 @@ def load_image() -> Image.Image:
     return Image.open(MATURITY_IMAGE)
 
 
+def normalize_company_number(value: object) -> object:
+    if pd.isna(value):
+        return value
+    if isinstance(value, (np.integer, int)):
+        return int(value)
+    if isinstance(value, float) and float(value).is_integer():
+        return int(value)
+    return value
+
+
 def build_sidebar(df: pd.DataFrame) -> dict:
     st.sidebar.markdown(
         """
@@ -532,7 +542,7 @@ def build_sidebar(df: pd.DataFrame) -> dict:
     final_k = st.sidebar.select_slider("Nombre de clusters retenu", options=k_values, value=default_k, help="Choisissez la structure de clusters à utiliser dans toute l’application.")
 
     if "Num" in df.columns:
-        company_options = df["Num"].dropna().tolist()
+        company_options = [normalize_company_number(val) for val in df["Num"].dropna().tolist()]
     else:
         company_options = df.index.tolist()
     default_company = 4 if len(company_options) > 4 else 0
@@ -1162,21 +1172,22 @@ def render_application_tab(
         "Évaluez une entreprise existante ou un nouveau questionnaire puis générez une comparaison au cluster cible et une feuille de route personnalisée.",
     )
     mode = st.radio("Mode d’application", ["Entreprise existante de la base", "Nouvelle entreprise"], horizontal=True)
+    company_identifier = None
 
     if mode == "Entreprise existante de la base":
         if "Num" in df_clustered.columns:
-            company_options = df_clustered["Num"].dropna().tolist()
+            company_options = [normalize_company_number(val) for val in df_clustered["Num"].dropna().tolist()]
             selected_company = st.selectbox(
-                "Choisissez l’entreprise à diagnostiquer",
+                "Choisissez l’entreprise à diagnostiquer (Num)",
                 company_options,
                 index=company_options.index(selected_company) if selected_company in company_options else 0,
             )
-            entreprise_matches = df_clustered.loc[df_clustered["Num"] == selected_company]
+            entreprise_matches = df_clustered.loc[df_clustered["Num"].apply(normalize_company_number) == selected_company]
             if entreprise_matches.empty:
                 st.error("Impossible de retrouver l’entreprise sélectionnée dans la base alignée.")
                 st.stop()
             entreprise = entreprise_matches.iloc[0]
-            company_identifier = selected_company
+            company_identifier = normalize_company_number(selected_company)
         else:
             selected_company = st.selectbox(
                 "Choisissez l’entreprise à diagnostiquer",
@@ -1187,10 +1198,11 @@ def render_application_tab(
             company_identifier = selected_company
         company_label = f"Entreprise #{company_identifier}"
         st.markdown("### Profil de l'entreprise")
-        info_1, info_2, info_3 = st.columns(3)
+        info_1, info_2, info_3, info_4 = st.columns(4)
         info_1.metric("Num", company_identifier)
         info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
+        info_4.metric("Niveau Maturité source", entreprise.get("Niveau Maturité", "N/A"))
     else:
         entreprise = build_manual_company_input(df_clustered)
         if entreprise.empty:
@@ -1239,6 +1251,16 @@ def render_application_tab(
     cluster_col.metric("Maturité organisationnelle", actual_organizational_label)
     tree_col.metric("Maturité technologique", predicted_dt)
     st.caption(f"Entreprise analysée : {company_label}")
+    if mode == "Entreprise existante de la base":
+        comparison_df = pd.DataFrame(
+            {
+                "Num": [company_identifier],
+                "Niveau organisationnel réel (colonne Niveau Maturité)": [actual_organizational_label],
+                "Niveau technologique prédit": [predicted_dt],
+            }
+        )
+        st.markdown("### Référence utilisée pour le scénario final")
+        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
 
     scenario_key = determine_scenario(actual_organizational_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
@@ -1479,7 +1501,7 @@ def main() -> None:
     aligned_df = df_raw.loc[feature_frame.index].copy()
     selected_company = sidebar["default_company"]
     if "Num" in aligned_df.columns:
-        valid_company_numbers = aligned_df["Num"].dropna().tolist()
+        valid_company_numbers = [normalize_company_number(val) for val in aligned_df["Num"].dropna().tolist()]
         if selected_company not in valid_company_numbers:
             selected_company = valid_company_numbers[0]
             st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
