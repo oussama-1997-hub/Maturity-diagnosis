@@ -531,7 +531,10 @@ def build_sidebar(df: pd.DataFrame) -> dict:
     default_k = 3 if 3 in k_values else k_values[0]
     final_k = st.sidebar.select_slider("Nombre de clusters retenu", options=k_values, value=default_k, help="Choisissez la structure de clusters à utiliser dans toute l’application.")
 
-    company_options = df.index.tolist()
+    if "Num" in df.columns:
+        company_options = df["Num"].dropna().tolist()
+    else:
+        company_options = df.index.tolist()
     default_company = 4 if len(company_options) > 4 else 0
 
     return {
@@ -1161,16 +1164,31 @@ def render_application_tab(
     mode = st.radio("Mode d’application", ["Entreprise existante de la base", "Nouvelle entreprise"], horizontal=True)
 
     if mode == "Entreprise existante de la base":
-        selected_company = st.selectbox(
-            "Choisissez l’entreprise à diagnostiquer",
-            df_clustered.index.tolist(),
-            index=df_clustered.index.tolist().index(selected_company) if selected_company in df_clustered.index else 0,
-        )
-        entreprise = df_clustered.loc[selected_company]
-        company_label = f"Entreprise base #{selected_company}"
+        if "Num" in df_clustered.columns:
+            company_options = df_clustered["Num"].dropna().tolist()
+            selected_company = st.selectbox(
+                "Choisissez l’entreprise à diagnostiquer",
+                company_options,
+                index=company_options.index(selected_company) if selected_company in company_options else 0,
+            )
+            entreprise_matches = df_clustered.loc[df_clustered["Num"] == selected_company]
+            if entreprise_matches.empty:
+                st.error("Impossible de retrouver l’entreprise sélectionnée dans la base alignée.")
+                st.stop()
+            entreprise = entreprise_matches.iloc[0]
+            company_identifier = selected_company
+        else:
+            selected_company = st.selectbox(
+                "Choisissez l’entreprise à diagnostiquer",
+                df_clustered.index.tolist(),
+                index=df_clustered.index.tolist().index(selected_company) if selected_company in df_clustered.index else 0,
+            )
+            entreprise = df_clustered.loc[selected_company]
+            company_identifier = selected_company
+        company_label = f"Entreprise #{company_identifier}"
         st.markdown("### Profil de l'entreprise")
         info_1, info_2, info_3 = st.columns(3)
-        info_1.metric("Index", selected_company)
+        info_1.metric("Num", company_identifier)
         info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
     else:
@@ -1203,21 +1221,26 @@ def render_application_tab(
     entreprise_scaled = scaler.transform(entreprise[selected_features].values.reshape(1, -1))
     predicted_cluster = int(kmeans.predict(entreprise_scaled)[0])
     predicted_cluster_label = cluster_label_map.get(predicted_cluster, "Inconnu")
+    actual_organizational_label = predicted_cluster_label
+    if mode == "Entreprise existante de la base":
+        dataset_maturity = entreprise.get("Niveau Maturité")
+        if pd.notna(dataset_maturity):
+            actual_organizational_label = str(dataset_maturity)
 
     features_dt_new = pd.DataFrame([entreprise]).reindex(columns=X.columns, fill_value=0)
     predicted_dt = clf.predict(features_dt_new)[0]
 
-    if mode == "Entreprise existante de la base" and selected_company in TOPSIS_REFERENCE_SCORES:
-        organizational_score = TOPSIS_REFERENCE_SCORES[selected_company]
+    if mode == "Entreprise existante de la base" and company_identifier in TOPSIS_REFERENCE_SCORES:
+        organizational_score = TOPSIS_REFERENCE_SCORES[company_identifier]
     else:
         organizational_score, _ = compute_weighted_topsis_score(entreprise, selected_features)
 
     cluster_col, tree_col = st.columns(2)
-    cluster_col.metric("Maturité organisationnelle", predicted_cluster_label)
+    cluster_col.metric("Maturité organisationnelle", actual_organizational_label)
     tree_col.metric("Maturité technologique", predicted_dt)
     st.caption(f"Entreprise analysée : {company_label}")
 
-    scenario_key = determine_scenario(predicted_cluster_label, predicted_dt)
+    scenario_key = determine_scenario(actual_organizational_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
     render_final_maturity_result(scenario_key, organizational_score)
     st.markdown(
@@ -1455,9 +1478,15 @@ def main() -> None:
         radar_features = selected_features.copy()
     aligned_df = df_raw.loc[feature_frame.index].copy()
     selected_company = sidebar["default_company"]
-    if selected_company not in aligned_df.index:
-        selected_company = aligned_df.index[0]
-        st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
+    if "Num" in aligned_df.columns:
+        valid_company_numbers = aligned_df["Num"].dropna().tolist()
+        if selected_company not in valid_company_numbers:
+            selected_company = valid_company_numbers[0]
+            st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
+    else:
+        if selected_company not in aligned_df.index:
+            selected_company = aligned_df.index[0]
+            st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
 
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(feature_frame)
@@ -1524,6 +1553,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
 
