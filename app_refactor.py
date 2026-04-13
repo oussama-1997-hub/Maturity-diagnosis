@@ -1250,8 +1250,9 @@ def render_application_tab(
     else:
         organizational_score, _ = compute_weighted_topsis_score(entreprise, selected_features)
 
-    cluster_col, tree_col = st.columns(2)
+    cluster_col, score_col, tree_col = st.columns(3)
     cluster_col.metric("Maturité organisationnelle", actual_organizational_label)
+    score_col.metric("Score de maturité organisationnelle", f"{organizational_score:.2f}/100")
     tree_col.metric("Maturité technologique", predicted_dt)
     st.caption(f"Entreprise analysée : {company_label}")
     if mode == "Entreprise existante de la base":
