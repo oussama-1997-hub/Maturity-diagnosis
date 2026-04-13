@@ -1202,7 +1202,7 @@ def render_application_tab(
             company_identifier = selected_company
         company_label = f"Entreprise #{company_identifier}"
         st.markdown("### Profil de l'entreprise")
-        info_1, info_2, info_3, info_4 = st.columns(4)
+        info_1, info_2, info_3= st.columns(4)
         info_1.metric("Num", company_identifier)
         info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
