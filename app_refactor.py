@@ -1206,7 +1206,7 @@ def render_application_tab(
         info_1.metric("Num", company_identifier)
         info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
-        info_4.metric("Niveau Maturité source", entreprise.get("Niveau Maturité", "N/A"))
+   
     else:
         entreprise = build_manual_company_input(df_clustered)
         if entreprise.empty:
