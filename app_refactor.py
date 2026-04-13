@@ -134,7 +134,7 @@ LEAN_DISPLAY_NAMES = {
 
 SCENARIO_TEXT = {
     "tech_lag": {
-        "title": "Scénario 3 : Retard technologique",
+        "title": "Scénario 1 : Retard technologique",
         "icon": "🔧",
         "body": "Votre entreprise présente une maturité organisationnelle plus avancée que son niveau d’adoption technologique. Il faut prioriser les outils Lean et les technologies Industrie 4.0 déjà utilisés dans le cluster cible.",
         "recommendations": [
@@ -144,7 +144,7 @@ SCENARIO_TEXT = {
         ],
     },
     "org_lag": {
-        "title": "Scénario 1 : Retard organisationnel",
+        "title": "Scénario 2 : Retard organisationnel",
         "icon": "⚡",
         "body": "L’adoption technologique est en avance sur la préparation organisationnelle. Il faut d’abord renforcer le pilotage, les processus et l’apprentissage collectif avant de déployer davantage d’outils.",
         "recommendations": [
@@ -154,7 +154,7 @@ SCENARIO_TEXT = {
         ],
     },
     "aligned": {
-        "title": "Scénario 2 : Alignement stratégique",
+        "title": "Scénario 3 : Alignement stratégique",
         "icon": "🚀",
         "body": "La maturité organisationnelle et l’adoption technologique sont alignées. L’enjeu est d’accélérer de manière équilibrée en ciblant les leviers les plus impactants.",
         "recommendations": [
@@ -1202,11 +1202,10 @@ def render_application_tab(
             company_identifier = selected_company
         company_label = f"Entreprise #{company_identifier}"
         st.markdown("### Profil de l'entreprise")
-        info_1, info_2, info_3= st.columns(4)
+        info_1, info_2, info_3 = st.columns(3)
         info_1.metric("Num", company_identifier)
         info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
-   
     else:
         entreprise = build_manual_company_input(df_clustered)
         if entreprise.empty:
