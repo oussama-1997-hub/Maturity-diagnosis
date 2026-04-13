@@ -134,7 +134,7 @@ LEAN_DISPLAY_NAMES = {
 
 SCENARIO_TEXT = {
     "tech_lag": {
-        "title": "Scénario 1 : Retard technologique",
+        "title": "Scénario 3 : Retard technologique",
         "icon": "🔧",
         "body": "Votre entreprise présente une maturité organisationnelle plus avancée que son niveau d’adoption technologique. Il faut prioriser les outils Lean et les technologies Industrie 4.0 déjà utilisés dans le cluster cible.",
         "recommendations": [
@@ -144,7 +144,7 @@ SCENARIO_TEXT = {
         ],
     },
     "org_lag": {
-        "title": "Scénario 2 : Retard organisationnel",
+        "title": "Scénario 1 : Retard organisationnel",
         "icon": "⚡",
         "body": "L’adoption technologique est en avance sur la préparation organisationnelle. Il faut d’abord renforcer le pilotage, les processus et l’apprentissage collectif avant de déployer davantage d’outils.",
         "recommendations": [
@@ -154,7 +154,7 @@ SCENARIO_TEXT = {
         ],
     },
     "aligned": {
-        "title": "Scénario 3 : Alignement stratégique",
+        "title": "Scénario 2 : Alignement stratégique",
         "icon": "🚀",
         "body": "La maturité organisationnelle et l’adoption technologique sont alignées. L’enjeu est d’accélérer de manière équilibrée en ciblant les leviers les plus impactants.",
         "recommendations": [
