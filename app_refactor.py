@@ -438,7 +438,7 @@ def render_hero() -> None:
         }
         </style>
         <div class="hero-box">
-            <div class="hero-title">Lean 4.0 Intelligence Studio</div>
+            <div class="hero-title">Lean 4.0 Transformation Studio</div>
             <p class="hero-copy">
                 Optimisez votre transformation Lean 4.0 grâce à l’intelligence issue du terrain.
                 Cette plateforme s’appuie sur des données réelles d’entreprises pour proposer un diagnostic structuré,
