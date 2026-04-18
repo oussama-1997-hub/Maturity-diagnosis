@@ -911,7 +911,7 @@ def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labe
     render_section_intro(
         "Executive Snapshot",
         "Portfolio overview",
-        "Start with the overall size of the dataset, the breadth of the maturity model, and the maturity-group structure before moving into detailed analytics.",
+        "Commencez par comprendre la structure du modèle (dimensions et sous-dimensions) ainsi que la répartition des entreprises selon les niveaux de maturité, puis explorez les analyses détaillées pour approfondir le diagnostic et guider la transformation Lean 4.0.",
     )
     dataset_col, image_col = st.columns([1.1, 0.9])
     with dataset_col:
