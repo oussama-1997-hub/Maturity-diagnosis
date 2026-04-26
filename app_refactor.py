@@ -171,6 +171,42 @@ SIZE_OPTIONS = [
     "Grande entreprise / Large company",
 ]
 
+QUESTION_MAP = {
+    "Leadership - Engagement Lean ": "Dans quelle mesure la direction est-elle réellement engagée dans la démarche Lean au sein de votre entreprise ?",
+    "Leadership - Engagement DT": "Dans quelle mesure la direction est-elle engagée dans la transformation digitale et l’Industrie 4.0 ?",
+    "Leadership - Stratégie ": "Dans quelle mesure la stratégie de l’entreprise intègre-t-elle clairement la transformation Lean 4.0 ?",
+    "Leadership - Communication": "Dans quelle mesure la communication autour de la transformation Lean 4.0 est-elle claire, régulière et partagée ?",
+    "Supply Chain - Collaboration inter-organisationnelle": "Dans quelle mesure votre entreprise collabore-t-elle efficacement avec ses partenaires de la chaîne logistique ?",
+    "Supply Chain - Traçabilité": "Dans quelle mesure les flux, produits et informations sont-ils traçables tout au long de la supply chain ?",
+    "Supply Chain - Impact sur les employées": "Dans quelle mesure les transformations de la supply chain prennent-elles en compte l’impact sur les employés ?",
+    "Opérations - Standardisation des processus": "Dans quelle mesure les processus opérationnels sont-ils standardisés et maîtrisés ?",
+    "Opérations - Juste-à-temps (JAT)": "Dans quelle mesure les principes du juste-à-temps sont-ils appliqués dans vos opérations ?",
+    "Opérations - Gestion des résistances": "Dans quelle mesure votre entreprise gère-t-elle efficacement les résistances au changement ?",
+    "Technologies - Connectivité et gestion des données": "Dans quelle mesure les systèmes de votre entreprise sont-ils connectés et les données exploitées efficacement ?",
+    "Technologies - Automatisation": "Dans quelle mesure les opérations et processus sont-ils automatisés ?",
+    "Technologies - Pilotage du changement": "Dans quelle mesure le déploiement technologique est-il piloté et accompagné de manière structurée ?",
+    "Organisation apprenante  - Formation et développement des compétences": "Dans quelle mesure l’entreprise développe-t-elle les compétences nécessaires à la transformation Lean 4.0 ?",
+    "Organisation apprenante  - Collaboration et Partage des Connaissances": "Dans quelle mesure la collaboration interne et le partage des connaissances sont-ils encouragés ?",
+    "Organisation apprenante  - Flexibilité organisationnelle": "Dans quelle mesure l’organisation est-elle flexible et capable de s’adapter rapidement ?",
+}
+
+DIMENSION_WEIGHTS = {
+    "Leadership": 0.2057,
+    "Supply Chain": 0.1996,
+    "Opérations": 0.1990,
+    "Technologies": 0.1904,
+    "Organisation Apprenante": 0.2053,
+}
+
+TOPSIS_REFERENCE_SCORES = {
+    1: 73.64, 2: 51.26, 3: 75.92, 4: 42.47, 5: 68.60, 6: 42.38, 7: 71.15, 8: 39.47, 9: 31.46, 10: 72.06,
+    11: 76.09, 12: 5.97, 13: 65.55, 14: 65.85, 15: 83.74, 16: 71.24, 17: 58.22, 18: 55.05, 19: 64.45, 20: 72.98,
+    21: 51.77, 22: 22.58, 23: 69.25, 24: 49.68, 25: 65.20, 26: 51.01, 27: 56.12, 28: 55.90, 29: 75.91, 30: 59.98,
+    31: 50.23, 32: 71.86, 33: 27.88, 34: 72.44, 35: 44.49, 36: 93.56, 37: 64.23, 38: 59.53, 39: 46.58, 40: 44.22,
+    41: 25.00, 42: 34.81, 43: 62.19, 44: 55.89, 45: 39.08, 46: 67.34, 47: 65.07, 48: 73.80, 49: 56.97, 50: 49.64,
+    51: 27.92, 52: 53.42, 53: 62.37, 54: 58.93, 55: 51.36, 56: 83.09, 57: 30.23, 58: 49.61, 59: 58.68,
+}
+
 
 def render_hero() -> None:
     st.markdown(
@@ -437,14 +473,27 @@ def render_section_intro(kicker: str, title: str, copy: str) -> None:
 
 @st.cache_data(show_spinner=False)
 def load_dataset(uploaded_file) -> pd.DataFrame:
-    if uploaded_file is not None:
-        return pd.read_excel(uploaded_file)
-    return pd.read_excel(DEFAULT_DATASET)
+    df = pd.read_excel(uploaded_file) if uploaded_file is not None else pd.read_excel(DEFAULT_DATASET)
+    df = df.reset_index(drop=True).copy()
+    if "Num" in df.columns:
+        df = df.drop(columns=["Num"])
+    df.insert(0, "Num", np.arange(1, len(df) + 1))
+    return df
 
 
 @st.cache_data(show_spinner=False)
 def load_image() -> Image.Image:
     return Image.open(MATURITY_IMAGE)
+
+
+def normalize_company_number(value: object) -> object:
+    if pd.isna(value):
+        return value
+    if isinstance(value, (np.integer, int)):
+        return int(value)
+    if isinstance(value, float) and float(value).is_integer():
+        return int(value)
+    return value
 
 
 def build_sidebar(df: pd.DataFrame) -> dict:
@@ -495,7 +544,10 @@ def build_sidebar(df: pd.DataFrame) -> dict:
     default_k = 3 if 3 in k_values else k_values[0]
     final_k = st.sidebar.select_slider("Nombre de clusters retenu", options=k_values, value=default_k, help="Choisissez la structure de clusters à utiliser dans toute l’application.")
 
-    company_options = df.index.tolist()
+    if "Num" in df.columns:
+        company_options = [normalize_company_number(val) for val in df["Num"].dropna().tolist()]
+    else:
+        company_options = df.index.tolist()
     default_company = 4 if len(company_options) > 4 else 0
 
     return {
@@ -622,40 +674,45 @@ def company_dimension_table(entreprise: pd.Series, selected_features: List[str])
 def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
     render_section_intro(
         "New Intake",
-        "Capture a new company assessment",
-        "Use the external Google Form or complete the in-app questionnaire. This keeps the same analytics pipeline while making intake easier for future client companies.",
+        "Capture d’un nouveau questionnaire",
+        "Renseignez directement les réponses de l’entreprise sur la plateforme. Chaque score correspond à une question liée à une sous-dimension du modèle Lean 4.0.",
     )
 
     link_col_1, link_col_2 = st.columns(2)
     with link_col_1:
-        st.link_button("Open questionnaire editor", "https://docs.google.com/forms/d/18q1_-kOGChcj4DbGp7onkGYWFRK9_EW382yCCRSH4U8/edit", use_container_width=True)
+        st.link_button("Ouvrir l’éditeur du questionnaire", "https://docs.google.com/forms/d/18q1_-kOGChcj4DbGp7onkGYWFRK9_EW382yCCRSH4U8/edit", use_container_width=True)
     with link_col_2:
-        st.link_button("Open respondent form", "https://forms.gle/Uc7689Y6Y45qpiTo7", use_container_width=True)
+        st.link_button("Ouvrir le formulaire répondant", "https://forms.gle/Uc7689Y6Y45qpiTo7", use_container_width=True)
 
     with st.form("manual_company_form", clear_on_submit=False):
         meta_1, meta_2, meta_3 = st.columns(3)
-        company_name = meta_1.text_input("Company name", value="New client company")
+        company_name = meta_1.text_input("Nom de l’entreprise", value="Nouvelle entreprise cliente")
         sector_candidates = sorted([str(val) for val in df_reference.get("Secteur industriel", pd.Series(dtype=object)).dropna().unique().tolist()])
-        if "Other" not in sector_candidates:
-            sector_candidates.append("Other")
-        company_sector_choice = meta_2.selectbox("Industrial sector", sector_candidates, index=0 if sector_candidates else None)
-        company_size = meta_3.selectbox("Company size", SIZE_OPTIONS, index=1)
-        custom_sector = st.text_input("Custom sector label", value="", placeholder="Fill only if you selected Other")
+        if "Autre" not in sector_candidates:
+            sector_candidates.append("Autre")
+        company_sector_choice = meta_2.selectbox("Secteur industriel", sector_candidates, index=0 if sector_candidates else None)
+        company_size = meta_3.selectbox("Taille de l’entreprise", SIZE_OPTIONS, index=1)
+        custom_sector = st.text_input("Secteur personnalisé", value="", placeholder="À remplir seulement si vous choisissez Autre")
 
         manual_scores: Dict[str, float] = {}
-        dim_cols = st.columns(len(DIMENSION_MAP))
-        for col, (dimension, sub_dims) in zip(dim_cols, DIMENSION_MAP.items()):
-            with col:
-                st.markdown(f"**{dimension}**")
-                for sub_dim in sub_dims:
-                    manual_scores[sub_dim] = st.slider(
-                        sub_dim.strip(),
-                        min_value=1,
-                        max_value=5,
-                        value=3,
-                        step=1,
-                        key=f"manual_{sub_dim}",
-                    )
+        st.markdown("### Questionnaire de maturité Lean 4.0")
+        st.caption("Attribuez une note entière de 1 à 5 pour chaque question. Le questionnaire est présenté par dimension avec une mise en page compacte sur deux colonnes.")
+        for dimension, sub_dims in DIMENSION_MAP.items():
+            with st.expander(f"🧩 {dimension}", expanded=True):
+                question_columns = st.columns(2)
+                for idx, sub_dim in enumerate(sub_dims):
+                    question_text = QUESTION_MAP.get(sub_dim, sub_dim.strip())
+                    with question_columns[idx % 2]:
+                        st.markdown(f"**{question_text}**")
+                        st.caption(f"Sous-dimension : {sub_dim.strip()} | Échelle : 1 = faible, 5 = très avancé")
+                        manual_scores[sub_dim] = st.slider(
+                            f"Score - {sub_dim.strip()}",
+                            min_value=1,
+                            max_value=5,
+                            value=3,
+                            step=1,
+                            key=f"manual_{sub_dim}",
+                        )
 
         lean_cols = [col for col in df_reference.columns if col.startswith("Lean_")]
         tech_cols = [col for col in df_reference.columns if col.startswith("Tech_")]
@@ -663,23 +720,23 @@ def build_manual_company_input(df_reference: pd.DataFrame) -> pd.Series:
         tech_options = {col.replace("Tech_", ""): col for col in tech_cols}
 
         selected_lean = st.multiselect(
-            "Lean methods already adopted",
+            "Méthodes Lean déjà adoptées",
             options=sorted(lean_options.keys()),
         )
         selected_tech = st.multiselect(
-            "Industry 4.0 technologies already adopted",
+            "Technologies Industrie 4.0 déjà adoptées",
             options=sorted(tech_options.keys()),
         )
 
-        submitted = st.form_submit_button("Analyze new company", use_container_width=True)
+        submitted = st.form_submit_button("Analyser la nouvelle entreprise", use_container_width=True)
 
     if not submitted:
-        st.info("Complete the questionnaire and click 'Analyze new company' to generate the full diagnosis.")
+        st.info("Complétez les questions puis cliquez sur « Analyser la nouvelle entreprise » pour générer le diagnostic complet.")
         return pd.Series(dtype=object)
 
     manual_company = pd.Series(0, index=df_reference.columns, dtype=object)
     manual_company["Nom entreprise"] = company_name
-    manual_company["Secteur industriel"] = custom_sector if company_sector_choice == "Other" and custom_sector.strip() else company_sector_choice
+    manual_company["Secteur industriel"] = custom_sector if company_sector_choice == "Autre" and custom_sector.strip() else company_sector_choice
     manual_company["Taille entreprise "] = company_size
 
     for col, value in manual_scores.items():
@@ -706,50 +763,25 @@ def determine_scenario(cluster_label: str, predicted_dt: str) -> str:
 
 def priority_from_gap(value: float) -> str:
     if value <= -1.0:
-        return "High"
+        return "Élevé"
     if value <= -0.5:
-        return "Medium"
-    return "Low"
+        return "Moyen"
+    return "Faible"
 
 
 def priority_from_adoption(value: float) -> str:
     if value >= 0.7:
-        return "High"
+        return "Élevé"
     if value >= 0.4:
-        return "Medium"
-    return "Low"
-
-
-def roadmap_level_from_gap(value: float) -> str:
-    if value <= -1.2:
-        return "Critical"
-    if value <= -0.8:
-        return "Priority 1"
-    if value <= -0.4:
-        return "Priority 2"
-    return "Monitor"
-
-
-def roadmap_level_from_adoption(value: float) -> str:
-    if value >= 0.75:
-        return "Immediate"
-    if value >= 0.5:
-        return "Next Wave"
-    return "Build Case"
+        return "Moyen"
+    return "Faible"
 
 
 def style_priority_cell(value: object) -> str:
     palette = {
-        "Critical": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
-        "Priority 1": "background-color:#ffedd5;color:#9a3412;font-weight:800;border-radius:8px;",
-        "Priority 2": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
-        "Monitor": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
-        "Immediate": "background-color:#dbeafe;color:#1d4ed8;font-weight:800;border-radius:8px;",
-        "Next Wave": "background-color:#e0f2fe;color:#075985;font-weight:700;border-radius:8px;",
-        "Build Case": "background-color:#ecfeff;color:#155e75;font-weight:700;border-radius:8px;",
-        "High": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
-        "Medium": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
-        "Low": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
+        "Élevé": "background-color:#fee2e2;color:#991b1b;font-weight:800;border-radius:8px;",
+        "Moyen": "background-color:#fef3c7;color:#92400e;font-weight:700;border-radius:8px;",
+        "Faible": "background-color:#dcfce7;color:#166534;font-weight:700;border-radius:8px;",
     }
     return palette.get(str(value), "")
 
@@ -796,6 +828,85 @@ def build_dimension_comparison(entreprise: pd.Series, cluster_target: pd.Series,
             company_scores[dimension] = float(pd.to_numeric(entreprise[valid_cols], errors="coerce").mean())
             target_scores[dimension] = float(pd.to_numeric(cluster_target[valid_cols], errors="coerce").mean())
     return company_scores, target_scores
+
+
+def compute_weighted_topsis_score(entreprise: pd.Series, selected_features: List[str]) -> Tuple[float, pd.DataFrame]:
+    rows = []
+    for dimension, cols in DIMENSION_MAP.items():
+        valid_cols = [col for col in cols if col in selected_features and col in entreprise.index]
+        if not valid_cols:
+            continue
+        dimension_weight = DIMENSION_WEIGHTS.get(dimension, 0.0)
+        sub_weight = dimension_weight / len(valid_cols)
+        for col in valid_cols:
+            value = float(pd.to_numeric(entreprise.get(col, np.nan), errors="coerce"))
+            if not np.isnan(value):
+                rows.append(
+                    {
+                        "dimension": dimension,
+                        "sub_dimension": col,
+                        "score": value,
+                        "weight": sub_weight,
+                    }
+                )
+
+    score_df = pd.DataFrame(rows)
+    if score_df.empty:
+        return 0.0, pd.DataFrame()
+
+    total_weight = score_df["weight"].sum()
+    if total_weight <= 0:
+        return 0.0, pd.DataFrame()
+    score_df["weight"] = score_df["weight"] / total_weight
+    score_df["weighted_score"] = score_df["score"] * score_df["weight"]
+    score_df["ideal"] = 5.0 * score_df["weight"]
+    score_df["anti_ideal"] = 1.0 * score_df["weight"]
+
+    d_plus = float(np.sqrt(((score_df["weighted_score"] - score_df["ideal"]) ** 2).sum()))
+    d_minus = float(np.sqrt(((score_df["weighted_score"] - score_df["anti_ideal"]) ** 2).sum()))
+    score = 0.0 if (d_plus + d_minus) == 0 else (d_minus / (d_plus + d_minus)) * 100
+
+    dimension_scores = score_df.groupby("dimension")[["score"]].mean()
+    return round(score, 2), dimension_scores
+
+
+def render_final_maturity_result(scenario_key: str, organizational_score: float, company_reference: str | None = None) -> None:
+    prefix_map = {"tech_lag": "RT", "org_lag": "RO", "aligned": "AL"}
+    active_prefix = prefix_map.get(scenario_key, "AL")
+    circle_classes = {
+        "RO": "background:#ef4444;color:#ffffff;",
+        "AL": "background:#84cc16;color:#ffffff;",
+        "RT": "background:#ef4444;color:#ffffff;",
+    }
+    inactive_style = "background:#f3f4f6;color:#94a3b8;border:2px solid #cbd5e1;"
+
+    def style_for(label: str) -> str:
+        return circle_classes[label] if label == active_prefix else inactive_style
+
+    st.markdown(
+        f"""
+        <div class="roadmap-card" style="padding:1.2rem 1.3rem;">
+            <div class="roadmap-title">Résultat final de l’évaluation Lean 4.0</div>
+            <p class="roadmap-copy">Le score de maturité organisationnelle est enrichi par un indice d’alignement technologique pour produire une notation synthétique de type RT-75, RO-68 ou AL-89.</p>
+            {"<p class='roadmap-copy' style='margin-top:0.35rem;'><strong>Entreprise analysée :</strong> " + company_reference + "</p>" if company_reference else ""}
+            <div style="display:flex;align-items:center;gap:1.2rem;margin-top:1rem;">
+                <div style="display:flex;flex-direction:column;gap:0.8rem;align-items:center;min-width:88px;">
+                    <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('RO')}">RO</div>
+                    <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('AL')}">AL</div>
+                    <div style="width:64px;height:64px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:1.45rem;font-weight:800;{style_for('RT')}">RT</div>
+                </div>
+                <div style="flex:1;display:flex;justify-content:center;">
+                    <div style="min-width:180px;border-radius:18px;border:1px solid #cbd5e1;background:linear-gradient(180deg,#ffffff,#f8fafc);padding:1rem 1.4rem;box-shadow:0 12px 24px rgba(15,23,42,0.08);text-align:center;">
+                        <div style="font-size:0.85rem;color:#64748b;text-transform:uppercase;letter-spacing:0.08em;">Notation synthétique</div>
+                        <div style="font-size:2rem;font-weight:900;color:#0f172a;line-height:1.2;margin-top:0.3rem;">{active_prefix}-{int(round(organizational_score))}</div>
+                        <div style="font-size:1rem;color:#334155;margin-top:0.15rem;">Score TOPSIS : {organizational_score:.2f}/100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labels: Dict[int, str]) -> None:
@@ -1067,18 +1178,34 @@ def render_application_tab(
         "Évaluez une entreprise existante ou un nouveau questionnaire puis générez une comparaison au cluster cible et une feuille de route personnalisée.",
     )
     mode = st.radio("Mode d’application", ["Entreprise existante de la base", "Nouvelle entreprise"], horizontal=True)
+    company_identifier = None
 
     if mode == "Entreprise existante de la base":
-        selected_company = st.selectbox(
-            "Choisissez l’entreprise à diagnostiquer",
-            df_clustered.index.tolist(),
-            index=df_clustered.index.tolist().index(selected_company) if selected_company in df_clustered.index else 0,
-        )
-        entreprise = df_clustered.loc[selected_company]
-        company_label = f"Entreprise base #{selected_company}"
+        if "Num" in df_clustered.columns:
+            company_options = [normalize_company_number(val) for val in df_clustered["Num"].dropna().tolist()]
+            selected_company = st.selectbox(
+                "Choisissez l’entreprise à diagnostiquer (Num)",
+                company_options,
+                index=company_options.index(selected_company) if selected_company in company_options else 0,
+            )
+            entreprise_matches = df_clustered.loc[df_clustered["Num"].apply(normalize_company_number) == selected_company]
+            if entreprise_matches.empty:
+                st.error("Impossible de retrouver l’entreprise sélectionnée dans la base alignée.")
+                st.stop()
+            entreprise = entreprise_matches.iloc[0]
+            company_identifier = normalize_company_number(selected_company)
+        else:
+            selected_company = st.selectbox(
+                "Choisissez l’entreprise à diagnostiquer",
+                df_clustered.index.tolist(),
+                index=df_clustered.index.tolist().index(selected_company) if selected_company in df_clustered.index else 0,
+            )
+            entreprise = df_clustered.loc[selected_company]
+            company_identifier = selected_company
+        company_label = f"Entreprise #{company_identifier}"
         st.markdown("### Profil de l'entreprise")
         info_1, info_2, info_3 = st.columns(3)
-        info_1.metric("Index", selected_company)
+        info_1.metric("Num", company_identifier)
         info_2.metric("Secteur", entreprise.get("Secteur industriel", "N/A"))
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
     else:
@@ -1111,17 +1238,39 @@ def render_application_tab(
     entreprise_scaled = scaler.transform(entreprise[selected_features].values.reshape(1, -1))
     predicted_cluster = int(kmeans.predict(entreprise_scaled)[0])
     predicted_cluster_label = cluster_label_map.get(predicted_cluster, "Inconnu")
+    actual_organizational_label = predicted_cluster_label
+    if mode == "Entreprise existante de la base":
+        dataset_maturity = entreprise.get("Niveau Maturité")
+        if pd.notna(dataset_maturity):
+            actual_organizational_label = str(dataset_maturity)
 
     features_dt_new = pd.DataFrame([entreprise]).reindex(columns=X.columns, fill_value=0)
     predicted_dt = clf.predict(features_dt_new)[0]
 
-    cluster_col, tree_col = st.columns(2)
-    cluster_col.metric("Maturité organisationnelle", predicted_cluster_label)
+    if mode == "Entreprise existante de la base" and company_identifier in TOPSIS_REFERENCE_SCORES:
+        organizational_score = TOPSIS_REFERENCE_SCORES[company_identifier]
+    else:
+        organizational_score, _ = compute_weighted_topsis_score(entreprise, selected_features)
+
+    cluster_col, score_col, tree_col = st.columns(3)
+    cluster_col.metric("Maturité organisationnelle", actual_organizational_label)
+    score_col.metric("Score de maturité organisationnelle", f"{organizational_score:.2f}/100")
     tree_col.metric("Maturité technologique", predicted_dt)
     st.caption(f"Entreprise analysée : {company_label}")
+    if mode == "Entreprise existante de la base":
+        comparison_df = pd.DataFrame(
+            {
+                "Num": [company_identifier],
+                "Niveau organisationnel réel (colonne Niveau Maturité)": [actual_organizational_label],
+                "Niveau technologique prédit": [predicted_dt],
+            }
+        )
+        st.markdown("### Référence utilisée pour le scénario final")
+        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
 
-    scenario_key = determine_scenario(predicted_cluster_label, predicted_dt)
+    scenario_key = determine_scenario(actual_organizational_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
+    render_final_maturity_result(scenario_key, organizational_score, company_label)
     st.markdown(
         f"""
         <div class="hero-box" style="padding:1.1rem 1.2rem; margin-top:0.8rem;">
@@ -1131,6 +1280,18 @@ def render_application_tab(
         """,
         unsafe_allow_html=True,
     )
+    with st.expander("Méthode de calcul du score global Lean 4.0", expanded=False):
+        st.markdown(
+            """
+            Le résultat final combine :
+            1. Un score continu de maturité organisationnelle calculé par la logique TOPSIS pondérée.
+            2. Un indice qualitatif d’alignement entre maturité organisationnelle et maturité technologique :
+               `RT` pour retard technologique, `RO` pour retard organisationnel et `AL` pour alignement.
+
+            La note finale affichée prend donc la forme :
+            `RT-75`, `RO-68` ou `AL-89`.
+            """
+        )
     st.markdown("## 🧭 Guide d’utilisation personnalisé")
     st.markdown(
         """
@@ -1224,9 +1385,8 @@ def render_application_tab(
     gap_df = pd.DataFrame(
         {
             "Sous-dimension": negative_gaps.index,
-            "Gap": negative_gaps.round(2).values,
-            "Priority": [priority_from_gap(x) for x in negative_gaps.values],
-            "Graduation": [roadmap_level_from_gap(x) for x in negative_gaps.values],
+            "Écart": negative_gaps.round(2).values,
+            "Priorité": [priority_from_gap(x) for x in negative_gaps.values],
         }
     )
 
@@ -1242,25 +1402,25 @@ def render_application_tab(
     )
 
     if not gap_df.empty:
-        critical_count = int((gap_df["Graduation"] == "Critical").sum())
-        priority_1_count = int((gap_df["Graduation"] == "Priority 1").sum())
-        priority_2_count = int((gap_df["Graduation"] == "Priority 2").sum())
+        high_count = int((gap_df["Priorité"] == "Élevé").sum())
+        medium_count = int((gap_df["Priorité"] == "Moyen").sum())
+        low_count = int((gap_df["Priorité"] == "Faible").sum())
     else:
-        critical_count = 0
-        priority_1_count = 0
-        priority_2_count = 0
+        high_count = 0
+        medium_count = 0
+        low_count = 0
 
     stat_1, stat_2, stat_3 = st.columns(3)
-    stat_1.metric("Écarts critiques", critical_count)
-    stat_2.metric("Écarts priorité 1", priority_1_count)
-    stat_3.metric("Écarts priorité 2", priority_2_count)
+    stat_1.metric("Priorité élevée", high_count)
+    stat_2.metric("Priorité moyenne", medium_count)
+    stat_3.metric("Priorité faible", low_count)
 
     st.markdown("#### Feuille de route organisationnelle : écarts à résorber")
     if gap_df.empty:
         st.success("Aucun écart négatif détecté par rapport au cluster cible.")
     else:
         st.dataframe(
-            build_roadmap_styler(gap_df, "Gap", "YlOrRd_r", "Graduation"),
+            build_roadmap_styler(gap_df, "Écart", "YlOrRd_r", "Priorité"),
             use_container_width=True,
         )
 
@@ -1275,17 +1435,15 @@ def render_application_tab(
         lean_df = pd.DataFrame(
             {
                 "Méthode Lean": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
-                "Technologies support": [LEAN_SUPPORT.get(LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")), "") for col in lean_to_adopt.index],
                 "Taux d'adoption dans le cluster cible": lean_to_adopt.round(2).values,
                 "Priorité": [priority_from_adoption(v) for v in lean_to_adopt.values],
-                "Graduation": [roadmap_level_from_adoption(v) for v in lean_to_adopt.values],
             }
         )
         if lean_df.empty:
             st.info("Aucune méthode Lean prioritaire à adopter.")
         else:
             st.dataframe(
-                build_roadmap_styler(lean_df, "Taux d'adoption dans le cluster cible", "Blues", "Graduation"),
+                build_roadmap_styler(lean_df, "Taux d'adoption dans le cluster cible", "Blues", "Priorité"),
                 use_container_width=True,
             )
 
@@ -1296,14 +1454,13 @@ def render_application_tab(
                 "Technologie": [col.replace("Tech_", "") for col in tech_to_adopt.index],
                 "Taux d'adoption dans le cluster cible": tech_to_adopt.round(2).values,
                 "Priorité": [priority_from_adoption(v) for v in tech_to_adopt.values],
-                "Graduation": [roadmap_level_from_adoption(v) for v in tech_to_adopt.values],
             }
         )
         if tech_df.empty:
             st.info("Aucune technologie prioritaire à adopter.")
         else:
             st.dataframe(
-                build_roadmap_styler(tech_df, "Taux d'adoption dans le cluster cible", "PuBu", "Graduation"),
+                build_roadmap_styler(tech_df, "Taux d'adoption dans le cluster cible", "PuBu", "Priorité"),
                 use_container_width=True,
             )
 
@@ -1349,9 +1506,15 @@ def main() -> None:
         radar_features = selected_features.copy()
     aligned_df = df_raw.loc[feature_frame.index].copy()
     selected_company = sidebar["default_company"]
-    if selected_company not in aligned_df.index:
-        selected_company = aligned_df.index[0]
-        st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
+    if "Num" in aligned_df.columns:
+        valid_company_numbers = [normalize_company_number(val) for val in aligned_df["Num"].dropna().tolist()]
+        if selected_company not in valid_company_numbers:
+            selected_company = valid_company_numbers[0]
+            st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
+    else:
+        if selected_company not in aligned_df.index:
+            selected_company = aligned_df.index[0]
+            st.sidebar.warning("L’entreprise sélectionnée contenait des valeurs manquantes sur les sous-dimensions actives. La première entreprise valide a été choisie à la place.")
 
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(feature_frame)
