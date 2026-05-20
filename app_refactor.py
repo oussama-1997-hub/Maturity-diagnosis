@@ -113,23 +113,20 @@ LEAN_SUPPORT = {
 
 LEAN_DISPLAY_NAMES = {
     "Lean_QRQC": "QRQC",
-    "Lean_DDMRP/ hoshin kanri": "DDMRP / Hoshin Kanri",
     "Lean_5S": "5S",
     "Lean_Heijunka": "Heijunka",
-    "Lean_Maki-Gami/Hoshinâ€¦etc": "Maki-Gami / Hoshin",
     "Lean_Value Stream Mapping (VSM)": "Value Stream Mapping (VSM)",
     "Lean_Kaizen": "Kaizen",
-    "Lean_DDMRP": "DDMRP",
-    "Lean_MÃ©thode TPM / TRS": "Méthode TPM / TRS",
+    "Lean_Méthode TPM / TRS": "Méthode TPM / TRS",
     "Lean_Kata": "Kata",
-    "Lean_Just in time": "Juste à temps (JAT)",
+    "Lean_Juste à temps": "Juste à temps (JAT)",
     "Lean_QRAP": "QRAP",
-    "Lean_TPM / TRS method": "TPM / TRS",
     "Lean_6 sigma": "6 Sigma",
     "Lean_Poka Yoke": "Poka Yoke",
     "Lean_Takt Time": "Takt Time",
     "Lean_Kanban": "Kanban",
     "Lean_GEMBA": "Gemba",
+    "Lean_DDMRP / Hoshin Kanri": "DDMRP / Hoshin Kanri",
 }
 
 SCENARIO_TEXT = {
@@ -588,37 +585,50 @@ def rank_cluster_labels(cluster_means: pd.DataFrame) -> Dict[int, str]:
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Consolide les colonnes Lean/Tech : fusionne les doublons FR/EN,
+    retire les colonnes inutiles (`Tech_Je ne sais pas`) et harmonise les noms."""
     normalized = df.copy()
 
+    # 1) Fusion des paires bilingues (FR retenu, EN fusionne puis supprime)
     merge_pairs = [
-        ("Lean_MÃ©thode TPM / TRS", "Lean_TPM / TRS method"),
-        ("Tech_RÃ©alitÃ© augmentÃ©e", "Tech_Augmented reality"),
-        ("Tech_SystÃ¨mes cyber physiques", "Tech_Cyber â€‹â€‹physical systems"),
+        ("Lean_Méthode TPM / TRS", "Lean_TPM / TRS method"),
+        ("Tech_Réalité augmentée", "Tech_Augmented reality"),
+        ("Tech_Systèmes cyber physiques", "Tech_Cyber \u200b\u200bphysical systems"),
         ("Tech_Intelligence artificielle", "Tech_Artificial intelligence"),
         ("Tech_Robots autonomes", "Tech_Autonomous robots"),
     ]
-
     for primary, alias in merge_pairs:
         if primary in normalized.columns and alias in normalized.columns:
-            normalized[primary] = normalized[primary].fillna(0).astype(int) | normalized[alias].fillna(0).astype(int)
+            normalized[primary] = (
+                normalized[primary].fillna(0).astype(int)
+                | normalized[alias].fillna(0).astype(int)
+            )
             normalized.drop(columns=[alias], inplace=True)
 
-    if {"Lean_DDMRP/ hoshin kanri", "Lean_DDMRP", "Lean_Maki-Gami/Hoshinâ€¦etc"}.issubset(normalized.columns):
-        normalized["Lean_DDMRP/ hoshin kanri"] = (
-            normalized["Lean_DDMRP/ hoshin kanri"].fillna(0).astype(int)
-            | normalized["Lean_DDMRP"].fillna(0).astype(int)
-            | normalized["Lean_Maki-Gami/Hoshinâ€¦etc"].fillna(0).astype(int)
-        )
-        normalized.drop(columns=["Lean_DDMRP", "Lean_Maki-Gami/Hoshinâ€¦etc"], inplace=True)
+    # 2) Regroupement DDMRP / Hoshin Kanri / Maki-Gami sous une seule colonne
+    ddmrp_aliases = ["Lean_DDMRP/ hoshin kanri", "Lean_DDMRP", "Lean_Maki-Gami/Hoshin\u2026etc"]
+    present = [c for c in ddmrp_aliases if c in normalized.columns]
+    if present:
+        merged = normalized[present[0]].fillna(0).astype(int)
+        for c in present[1:]:
+            merged = merged | normalized[c].fillna(0).astype(int)
+        normalized["Lean_DDMRP / Hoshin Kanri"] = merged
+        normalized.drop(columns=present, inplace=True)
 
-    jat_column = "Opérations - Juste-à-temps (JAT)"
-    if jat_column in normalized.columns:
-        normalized["Lean_Juste à temps"] = normalized[jat_column].apply(lambda x: 1 if x in [4, 5] else 0)
+    # 3) Juste-a-Temps : derive depuis le score Likert + fusion avec colonne dummy
+    jat_score = "Opérations - Juste-à-temps (JAT)"
+    if jat_score in normalized.columns:
+        derived = normalized[jat_score].apply(lambda x: 1 if x in [4, 5] else 0)
         if "Lean_Just in time" in normalized.columns:
-            normalized["Lean_Just in time"] = (
-                normalized["Lean_Juste à temps"].fillna(0).astype(int)
-                | normalized["Lean_Just in time"].fillna(0).astype(int)
-            )
+            derived = derived | normalized["Lean_Just in time"].fillna(0).astype(int)
+            normalized.drop(columns=["Lean_Just in time"], inplace=True)
+        normalized["Lean_Juste à temps"] = derived
+
+    # 4) Suppression de la colonne "Tech_Je ne sais pas" (non-reponse, sans valeur analytique)
+    for col in ("Tech_Je ne sais pas", "Tech_je ne sais pas"):
+        if col in normalized.columns:
+            normalized.drop(columns=[col], inplace=True)
+
     return normalized
 
 
