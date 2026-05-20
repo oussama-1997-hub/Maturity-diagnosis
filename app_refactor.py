@@ -585,9 +585,22 @@ def rank_cluster_labels(cluster_means: pd.DataFrame) -> Dict[int, str]:
 
 
 def normalize_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Consolide les colonnes Lean/Tech : fusionne les doublons FR/EN,
-    retire les colonnes inutiles (`Tech_Je ne sais pas`) et harmonise les noms."""
+    """Repare le mojibake d'encodage dans les noms de colonnes, fusionne les
+    doublons FR/EN, retire les colonnes inutiles (`Tech_Je ne sais pas`) et
+    harmonise les noms."""
     normalized = df.copy()
+
+    # 0) Reparation du mojibake dans les noms de colonnes
+    #    (UTF-8 mal interprete comme cp1252 lors de la lecture du fichier source)
+    def fix_mojibake(name: str) -> str:
+        try:
+            return name.encode("cp1252", errors="strict").decode("utf-8", errors="strict")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            return name
+    rename_map = {col: fix_mojibake(col) for col in normalized.columns
+                  if isinstance(col, str) and fix_mojibake(col) != col}
+    if rename_map:
+        normalized.rename(columns=rename_map, inplace=True)
 
     # 1) Fusion des paires bilingues (FR retenu, EN fusionne puis supprime)
     merge_pairs = [
@@ -1549,9 +1562,12 @@ def main() -> None:
     cluster_label_map = rank_cluster_labels(cluster_means)
     aligned_df["Niveau de maturité Lean 4.0"] = aligned_df["cluster"].map(cluster_label_map)
 
-    normalized_df = normalize_columns(aligned_df.copy())
-    target_col = "Niveau Maturité" if "Niveau Maturité" in normalized_df.columns else "Niveau de maturité Lean 4.0"
-    clf, X = train_decision_tree(normalized_df, target_col)
+    # Nettoyage en place : reparation du mojibake, fusion des doublons FR/EN,
+    # suppression de 'Tech_Je ne sais pas'. Toutes les sections utiliseront
+    # desormais les colonnes nettoyees.
+    aligned_df = normalize_columns(aligned_df)
+    target_col = "Niveau Maturité" if "Niveau Maturité" in aligned_df.columns else "Niveau de maturité Lean 4.0"
+    clf, X = train_decision_tree(aligned_df, target_col)
 
     render_overview(aligned_df, selected_features, cluster_label_map)
 
@@ -1578,7 +1594,7 @@ def main() -> None:
         render_decision_tree_tab(clf, X)
     with tabs[5]:
         render_application_tab(
-            normalized_df,
+            aligned_df,
             scaler,
             kmeans,
             selected_features,
