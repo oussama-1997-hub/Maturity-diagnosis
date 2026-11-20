@@ -103,7 +103,7 @@ SCENARIO_TEXT = {
         "recommendations": [
             "Prioriser les technologies et méthodes Lean déjà présentes dans le cluster cible mais encore absentes de l’entreprise.",
             "Utiliser les leviers majeurs de l’arbre de décision comme premiers axes d’implémentation.",
-            "Commencer par la feuille de route technologique puis consolider la feuille de route organisationnelle.",
+            "Commencer par la recommandation technologique puis consolider la recommandation organisationnelle.",
         ],
     },
     "org_lag": {
@@ -113,7 +113,7 @@ SCENARIO_TEXT = {
         "recommendations": [
             "Prioriser les sous-dimensions Lean 4.0 ayant les plus grands écarts négatifs face au cluster cible.",
             "Renforcer d’abord le leadership, les routines opérationnelles et l’organisation apprenante.",
-            "Commencer par la feuille de route organisationnelle puis réintégrer progressivement la feuille de route technologique.",
+            "Commencer par la recommandation organisationnelle puis réintégrer progressivement la recommandation technologique.",
         ],
     },
     "aligned": {
@@ -123,7 +123,7 @@ SCENARIO_TEXT = {
         "recommendations": [
             "Maintenir un rythme équilibré entre progression des dimensions de maturité et adoption technologique.",
             "Utiliser les variables les plus influentes de l’arbre de décision pour identifier les prochains accélérateurs.",
-            "Faire progresser de façon coordonnée la feuille de route technologique et la feuille de route organisationnelle.",
+            "Faire progresser de façon coordonnée la recommandation technologique et la recommandation organisationnelle.",
         ],
     },
 }
@@ -405,7 +405,7 @@ def render_hero() -> None:
             <p class="hero-copy">
                 Optimisez votre transformation Lean 4.0 grâce à l’intelligence issue du terrain.
                 Cette plateforme s’appuie sur des données réelles d’entreprises pour proposer un diagnostic structuré,
-                des benchmarks visuels et une feuille de route personnalisée, réaliste et actionnable.
+                des benchmarks visuels et des recommandations personnalisées, réalistes et actionnables.
             </p>
             <div class="workflow-grid">
                 <div class="workflow-step"><strong>01. Cadrer</strong><span>Charger la base et définir le périmètre d’analyse.</span></div>
@@ -413,7 +413,7 @@ def render_hero() -> None:
                 <div class="workflow-step"><strong>03. Lire</strong><span>Analyser l’ACP, les radars et les cartes thermiques.</span></div>
                 <div class="workflow-step"><strong>04. Expliquer</strong><span>Interpréter les facteurs clés via l’arbre de décision.</span></div>
                 <div class="workflow-step"><strong>05. Diagnostiquer</strong><span>Évaluer une entreprise existante ou un nouveau questionnaire.</span></div>
-                <div class="workflow-step"><strong>06. Décider</strong><span>Construire la feuille de route et les priorités.</span></div>
+                <div class="workflow-step"><strong>06. Décider</strong><span>Construire les recommandations et les priorités.</span></div>
             </div>
         </div>
         """,
@@ -1179,8 +1179,8 @@ def render_application_tab(
 ) -> None:
     render_section_intro(
         "Application",
-        "Évaluation et feuille de route personnalisée",
-        "Évaluez une entreprise existante ou un nouveau questionnaire puis générez une comparaison au cluster cible et une feuille de route personnalisée.",
+        "Évaluation et recommandations personnalisées",
+        "Évaluez une entreprise existante ou un nouveau questionnaire puis générez une comparaison au cluster cible et des recommandations personnalisées.",
     )
     mode = st.radio("Mode d’application", ["Entreprise existante de la base", "Nouvelle entreprise"], horizontal=True)
     company_identifier = None
@@ -1302,9 +1302,9 @@ def render_application_tab(
         """
         1. Identification du scénario d’adoption de l’entreprise.
         2. Lecture des écarts par rapport au cluster cible via les radars et les tableaux d’écart.
-        3. Génération de deux feuilles de route complémentaires :
-        - feuille de route organisationnelle Lean 4.0
-        - feuille de route technologique et méthodes Lean
+        3. Génération de deux recommandations complémentaires :
+        - recommandation organisationnelle Lean 4.0
+        - recommandation technologique et méthodes Lean
         4. Priorisation et exécution progressive selon le scénario détecté.
         """
     )
@@ -1395,12 +1395,12 @@ def render_application_tab(
         }
     )
 
-    st.markdown("### 🗺️ Feuille de route personnalisée")
+    st.markdown("### 🗺️ Recommandations personnalisées")
     st.markdown(
         """
         <div class="roadmap-card">
-            <div class="roadmap-title">Transformation roadmap</div>
-            <p class="roadmap-copy">Cette feuille de route est structurée en deux volets synchronisés : progression de la maturité organisationnelle et adoption prioritaire des méthodes Lean et technologies Industrie 4.0.</p>
+            <div class="roadmap-title">Recommandations de transformation</div>
+            <p class="roadmap-copy">Ces recommandations sont structurées en deux volets synchronisés : progression de la maturité organisationnelle et adoption prioritaire des méthodes Lean et technologies Industrie 4.0.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -1420,7 +1420,7 @@ def render_application_tab(
     stat_2.metric("Priorité moyenne", medium_count)
     stat_3.metric("Priorité faible", low_count)
 
-    st.markdown("#### Feuille de route organisationnelle : écarts à résorber")
+    st.markdown("#### Recommandation organisationnelle : écarts à résorber")
     if gap_df.empty:
         st.success("Aucun écart négatif détecté par rapport au cluster cible.")
     else:
@@ -1436,7 +1436,7 @@ def render_application_tab(
 
     roadmap_col, tech_col = st.columns(2)
     with roadmap_col:
-        st.markdown("#### Feuille de route technologique : méthodes Lean à adopter")
+        st.markdown("#### Recommandation technologique : méthodes Lean à adopter")
         lean_df = pd.DataFrame(
             {
                 "Méthode Lean": [LEAN_DISPLAY_NAMES.get(col, col.replace("Lean_", "")) for col in lean_to_adopt.index],
@@ -1453,7 +1453,7 @@ def render_application_tab(
             )
 
     with tech_col:
-        st.markdown("#### Feuille de route technologique : technologies Industrie 4.0 à adopter")
+        st.markdown("#### Recommandation technologique : technologies Industrie 4.0 à adopter")
         tech_df = pd.DataFrame(
             {
                 "Technologie": [col.replace("Tech_", "") for col in tech_to_adopt.index],
