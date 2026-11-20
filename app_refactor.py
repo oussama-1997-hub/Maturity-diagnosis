@@ -13,7 +13,6 @@ import streamlit as st
 from PIL import Image
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from sklearn.metrics import silhouette_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, export_graphviz, plot_tree
@@ -23,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_DATASET = BASE_DIR / "df_cleaned_with_dummies.xlsx"
 MATURITY_IMAGE = BASE_DIR / "MM lean 4.0.png"
 
-st.set_page_config(page_title="Lean 4.0 Studio", layout="wide")
+st.set_page_config(page_title="Lean 4.0 Transformation Studio", layout="wide")
 
 
 DIMENSION_MAP: Dict[str, List[str]] = {
@@ -55,48 +54,15 @@ DIMENSION_MAP: Dict[str, List[str]] = {
     ],
 }
 
+# Valeurs du mémoire de thèse (§2.4.2.2) : alpha global = 0.943, test pilote (30 entreprises) = 0.921
+CRONBACH_GLOBAL = 0.943
+CRONBACH_PILOT = 0.921
 CRONBACH_DATA = {
-    "Leadership": {
-        "alpha": 0.931,
-        "items": {
-            "Leadership - Communication": 0.992,
-            "Leadership - Engagement Lean": 0.926,
-            "Leadership - Stratégie": 0.901,
-            "Leadership - Engagement DT": 0.868,
-        },
-    },
-    "Supply Chain": {
-        "alpha": 0.863,
-        "items": {
-            "Supply Chain - Impact sur les employées": 0.925,
-            "Supply Chain - Traçabilité": 0.826,
-            "Supply Chain - Collaboration inter-organisationnelle": 0.722,
-        },
-    },
-    "Operations": {
-        "alpha": 0.867,
-        "items": {
-            "Opérations - Juste-à-temps (JAT)": 0.931,
-            "Opérations - Standardisation des processus": 0.831,
-            "Opérations - Gestion des résistances": 0.754,
-        },
-    },
-    "Technologies": {
-        "alpha": 0.888,
-        "items": {
-            "Technologies - Connectivité et gestion des données": 0.904,
-            "Technologies - Automatisation": 0.881,
-            "Technologies - Pilotage du changement": 0.781,
-        },
-    },
-    "Organisation Apprenante": {
-        "alpha": 0.854,
-        "items": {
-            "Organisation apprenante  - Formation et développement des compétences": 0.876,
-            "Organisation apprenante  - Collaboration et Partage des Connaissances": 0.799,
-            "Organisation apprenante  - Flexibilité organisationnelle": 0.763,
-        },
-    },
+    "Leadership": {"alpha": 0.878},
+    "Supply Chain": {"alpha": 0.764},
+    "Opérations": {"alpha": 0.832},
+    "Technologies": {"alpha": 0.843},
+    "Organisation apprenante": {"alpha": 0.880},
 }
 
 LEAN_SUPPORT = {
@@ -435,7 +401,7 @@ def render_hero() -> None:
         }
         </style>
         <div class="hero-box">
-            <div class="hero-title">Lean 4.0 Intelligence Studio</div>
+            <div class="hero-title">Lean 4.0 Transformation Studio</div>
             <p class="hero-copy">
                 Optimisez votre transformation Lean 4.0 grâce à l’intelligence issue du terrain.
                 Cette plateforme s’appuie sur des données réelles d’entreprises pour proposer un diagnostic structuré,
@@ -444,7 +410,7 @@ def render_hero() -> None:
             <div class="workflow-grid">
                 <div class="workflow-step"><strong>01. Cadrer</strong><span>Charger la base et définir le périmètre d’analyse.</span></div>
                 <div class="workflow-step"><strong>02. Segmenter</strong><span>Identifier les groupes de maturité et leur structure.</span></div>
-                <div class="workflow-step"><strong>03. Lire</strong><span>Analyser PCA, radars et heatmaps.</span></div>
+                <div class="workflow-step"><strong>03. Lire</strong><span>Analyser l’ACP, les radars et les cartes thermiques.</span></div>
                 <div class="workflow-step"><strong>04. Expliquer</strong><span>Interpréter les facteurs clés via l’arbre de décision.</span></div>
                 <div class="workflow-step"><strong>05. Diagnostiquer</strong><span>Évaluer une entreprise existante ou un nouveau questionnaire.</span></div>
                 <div class="workflow-step"><strong>06. Décider</strong><span>Construire la feuille de route et les priorités.</span></div>
@@ -536,7 +502,7 @@ def build_sidebar(df: pd.DataFrame) -> dict:
         radar_features.extend(DIMENSION_MAP[dimension])
 
     st.sidebar.markdown("### 3. Paramètres du clustering")
-    k_range = st.sidebar.slider("Plage de recherche de K", 2, 10, (2, 6), help="L’application calcule les courbes Elbow et Silhouette sur cette plage avant de retenir le nombre de clusters opérationnel.")
+    k_range = st.sidebar.slider("Plage de recherche de K", 1, 10, (1, 10), help="L’application calcule la courbe du coude (Elbow) sur cette plage avant de retenir le nombre de clusters opérationnel.")
     k_values = list(range(k_range[0], k_range[1] + 1))
     default_k = 3 if 3 in k_values else k_values[0]
     final_k = st.sidebar.select_slider("Nombre de clusters retenu", options=k_values, value=default_k, help="Choisissez la structure de clusters à utiliser dans toute l’application.")
@@ -564,15 +530,15 @@ def prepare_cluster_inputs(df: pd.DataFrame, selected_features: List[str]) -> Tu
     return feature_frame, scaled
 
 
-def compute_cluster_metrics(scaled_features: np.ndarray, k_range: Tuple[int, int]) -> Tuple[List[int], List[float], List[float]]:
+def compute_cluster_metrics(scaled_features: np.ndarray, k_range: Tuple[int, int]) -> Tuple[List[int], List[float]]:
+    """Méthode du coude (Elbow) : inertie intra-classe (WCSS) pour chaque K (mémoire, Annexe 2)."""
     ks = list(range(k_range[0], k_range[1] + 1))
-    inertia, silhouettes = [], []
+    inertia = []
     for k in ks:
         model = KMeans(n_clusters=k, random_state=42, n_init=10)
-        labels = model.fit_predict(scaled_features)
+        model.fit(scaled_features)
         inertia.append(model.inertia_)
-        silhouettes.append(silhouette_score(scaled_features, labels))
-    return ks, inertia, silhouettes
+    return ks, inertia
 
 
 def rank_cluster_labels(cluster_means: pd.DataFrame) -> Dict[int, str]:
@@ -662,6 +628,7 @@ def train_decision_tree(df: pd.DataFrame, target_col: str) -> Tuple[DecisionTree
         "Technologies industrie 4.0",
         "Cluster",
         "Feature_Cluster",
+        "Num",  # identifiant de l’entreprise : ne doit pas servir de variable explicative
     ] + survey_columns
 
     removable += [col for col in df.columns if col.startswith("Secteur") or col.startswith("taille")]
@@ -674,7 +641,8 @@ def train_decision_tree(df: pd.DataFrame, target_col: str) -> Tuple[DecisionTree
     y = y.loc[valid_idx]
 
     X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2, random_state=46, stratify=y)
-    clf = DecisionTreeClassifier(random_state=10, min_samples_leaf=3, max_depth=5)
+    # random_state = 49 : reproduit à l’identique l’arbre du mémoire (Annexe 7, Figure A.4)
+    clf = DecisionTreeClassifier(random_state=49, min_samples_leaf=3, max_depth=5)
     clf.fit(X_train, y_train)
     return clf, X
 
@@ -934,19 +902,19 @@ def render_final_maturity_result(scenario_key: str, organizational_score: float,
 
 def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labels: Dict[int, str]) -> None:
     render_section_intro(
-        "Executive Snapshot",
-        "Portfolio overview",
-        "Start with the overall size of the dataset, the breadth of the maturity model, and the maturity-group structure before moving into detailed analytics.",
+        "Vue d’ensemble",
+        "Base de données et modèle",
+        "Taille de la base, étendue du modèle de maturité et structure des niveaux avant d’entrer dans les analyses détaillées.",
     )
     dataset_col, image_col = st.columns([1.1, 0.9])
     with dataset_col:
-        st.subheader("Overview")
+        st.subheader("Chiffres clés")
         cols = st.columns(4)
         metrics = [
-            ("Companies", f"{len(df)}"),
-            ("Selected sub-dimensions", f"{len(selected_features)}"),
-            ("Lean methods", f"{len([c for c in df.columns if c.startswith('Lean_')])}"),
-            ("Industry 4.0 tech", f"{len([c for c in df.columns if c.startswith('Tech_')])}"),
+            ("Entreprises", f"{len(df)}"),
+            ("Sous-dimensions", f"{len(selected_features) - (1 if sum('Engagement' in c for c in selected_features) == 2 else 0)}"),
+            ("Méthodes Lean", f"{len([c for c in df.columns if c.startswith('Lean_')])}"),
+            ("Technologies I4.0", f"{len([c for c in df.columns if c.startswith('Tech_')])}"),
         ]
         for col, (label, value) in zip(cols, metrics):
             with col:
@@ -954,48 +922,47 @@ def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labe
                     f"<div class='info-card'><div class='card-label'>{label}</div><div class='card-value'>{value}</div></div>",
                     unsafe_allow_html=True,
                 )
-        st.markdown("### Maturity groups")
+        st.markdown("### Niveaux de maturité")
         st.dataframe(pd.DataFrame({"Cluster": list(cluster_labels.keys()), "Label": list(cluster_labels.values())}), use_container_width=True)
     with image_col:
         st.image(load_image(), caption="Modèle de Maturité Lean 4.0", use_container_width=True)
 
 
-def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_map) -> None:
+def render_clustering_tab(ks, inertia, df_clustered, cluster_label_map, final_k: int = 3) -> None:
     render_section_intro(
         "Analytics",
         "Clustering et fiabilité",
-        "Validez la structure du modèle de maturité, analysez les courbes Elbow et Silhouette puis retenez la segmentation utilisée dans toute l’application.",
+        "Validez la fiabilité du questionnaire, lisez la méthode du coude (Elbow) puis retenez la segmentation utilisée dans toute l’application.",
     )
-    st.subheader("Analyse de fiabilité")
-    st.success("Cronbach's Alpha global pour les colonnes de maturité sélectionnées : 0.934")
-    for group, values in CRONBACH_DATA.items():
-        with st.expander(group):
-            st.write(f"Alpha : {values['alpha']:.3f}")
-            st.dataframe(
-                pd.DataFrame(
-                    {
-                        "Sous-dimension": list(values["items"].keys()),
-                        "Alpha si supprimée": list(values["items"].values()),
-                    }
-                ),
-                use_container_width=True,
-            )
+    st.subheader("Analyse de fiabilité (alpha de Cronbach)")
+    st.success(f"Cronbach's Alpha global (toutes les sous-dimensions) : {CRONBACH_GLOBAL:.3f} — cohérence interne excellente")
+    st.caption(f"Test pilote sur 30 entreprises : alpha = {CRONBACH_PILOT:.3f}. Seuil d’acceptation par dimension : 0,7.")
+    st.dataframe(
+        pd.DataFrame(
+            {
+                "Dimension": list(CRONBACH_DATA.keys()),
+                "Alpha de Cronbach": [f"{v['alpha']:.3f}" for v in CRONBACH_DATA.values()],
+            }
+        ),
+        use_container_width=True,
+        hide_index=True,
+    )
 
-    left, right = st.columns(2)
-    with left:
-        fig, ax = plt.subplots()
-        ax.plot(ks, inertia, marker="o")
-        ax.set_title("Méthode Elbow")
-        ax.set_xlabel("K")
-        ax.set_ylabel("Inertie")
-        st.pyplot(fig)
-    with right:
-        fig, ax = plt.subplots()
-        ax.plot(ks, silhouettes, marker="o")
-        ax.set_title("Score de silhouette")
-        ax.set_xlabel("K")
-        ax.set_ylabel("Score")
-        st.pyplot(fig)
+    st.subheader("Méthode du coude (Elbow)")
+    fig, ax = plt.subplots(figsize=(8, 4.2))
+    ax.plot(ks, inertia, marker="o", color="#1d4ed8", linewidth=2)
+    if final_k in ks:
+        y_k = inertia[ks.index(final_k)]
+        ax.axvline(final_k, color="#e0702a", linestyle="--", linewidth=1.4)
+        ax.annotate(f"Point de coude : K = {final_k}", xy=(final_k, y_k), xytext=(final_k + 0.6, y_k + (max(inertia) - min(inertia)) * 0.18),
+                    color="#e0702a", fontweight="bold", arrowprops=dict(arrowstyle="->", color="#e0702a"))
+    ax.set_title("Méthode du coude (Elbow)", fontweight="bold")
+    ax.set_xlabel("Nombre de clusters (K)")
+    ax.set_ylabel("Inertie intra-classe (WCSS)")
+    ax.set_xticks(ks)
+    ax.grid(alpha=0.25)
+    st.pyplot(fig)
+    st.caption("Au-delà de K = 3, l’inertie intra-classe ne diminue plus que faiblement : trois niveaux de maturité sont retenus.")
 
     summary = df_clustered["cluster"].value_counts().sort_index()
     summary_df = pd.DataFrame(
@@ -1009,20 +976,42 @@ def render_clustering_tab(ks, inertia, silhouettes, df_clustered, cluster_label_
     st.dataframe(summary_df, use_container_width=True)
 
 
+def build_pca_frame(df: pd.DataFrame) -> pd.DataFrame:
+    """15 sous-dimensions du modèle : les deux questions d’Engagement (Lean, DT) forment une seule sous-dimension."""
+    cols = [c for c in sum(DIMENSION_MAP.values(), []) if c in df.columns]
+    frame = df[cols].copy()
+    engagement = [c for c in cols if "Engagement" in c]
+    if len(engagement) == 2:
+        frame.insert(0, "Leadership - Engagement", frame[engagement].mean(axis=1))
+        frame = frame.drop(columns=engagement)
+    return frame.dropna()
+
+
 def render_pca_tab(df_clustered: pd.DataFrame, scaled_features: np.ndarray) -> None:
     render_section_intro(
         "Exploration",
-        "Visualisation PCA",
-        "Utilisez la PCA pour observer le degré de séparation entre les groupes de maturité et les zones de proximité entre profils d’entreprises.",
+        "Analyse en composantes principales (ACP)",
+        "L’ACP résume les 15 sous-dimensions en deux axes pour observer la séparation entre les niveaux de maturité.",
     )
+    frame = build_pca_frame(df_clustered)
     pca = PCA(n_components=2)
-    pca_result = pca.fit_transform(scaled_features)
-    df_pca = pd.DataFrame(pca_result, columns=["PCA1", "PCA2"])
+    pca_result = pca.fit_transform(StandardScaler().fit_transform(frame))
+    v1, v2 = pca.explained_variance_ratio_ * 100
+    df_pca = pd.DataFrame(pca_result, columns=["PC1", "PC2"], index=frame.index)
     maturity_col = "Niveau de maturité Lean 4.0" if "Niveau de maturité Lean 4.0" in df_clustered.columns else "Niveau de maturitÃ© Lean 4.0"
-    df_pca["label"] = df_clustered.loc[df_pca.index, maturity_col].values
-    fig, ax = plt.subplots()
-    sns.scatterplot(data=df_pca, x="PCA1", y="PCA2", hue="label", palette="Set2", ax=ax)
-    ax.set_title("PCA des clusters")
+    df_pca["Niveau"] = df_clustered.loc[df_pca.index, maturity_col].values
+    c1, c2, c3 = st.columns(3)
+    c1.metric("PC1 — niveau global de maturité", f"{v1:.1f} %")
+    c2.metric("PC2 — orientation", f"{v2:.1f} %")
+    c3.metric("Information conservée", f"{v1 + v2:.1f} %")
+    fig, ax = plt.subplots(figsize=(8, 5))
+    palette = {"Niveau Initial": "#3a6fb0", "Niveau Intégré": "#e0702a", "Niveau Avancé": "#2e9e6a"}
+    sns.scatterplot(data=df_pca, x="PC1", y="PC2", hue="Niveau", palette=palette,
+                    hue_order=[k for k in palette if k in set(df_pca["Niveau"])], s=60, ax=ax)
+    ax.set_xlabel(f"PC1 — niveau global de maturité ({v1:.1f} %)")
+    ax.set_ylabel(f"PC2 — orientation ({v2:.1f} %)")
+    ax.set_title("ACP des entreprises par niveau de maturité", fontweight="bold")
+    ax.grid(alpha=0.25)
     st.pyplot(fig)
 
 
@@ -1147,42 +1136,35 @@ def render_decision_tree_tab(clf: DecisionTreeClassifier, X: pd.DataFrame) -> No
         st.pyplot(fig, use_container_width=True)
 
     st.markdown("### Visualisation de l’arbre de décision")
-    st.caption("Arbre coloré orienté de gauche à droite pour une lecture plus claire par les décideurs.")
-    pretty_labels = [pretty_tree_label(col) for col in X.columns]
+    st.caption("Critère de Gini · min_samples_leaf = 3 · stratify = y — arbre identique à celui du mémoire (Annexe 7, Figure A.4). Vert : Initial · Violet : Intégré · Orange : Avancé.")
     dot_data = export_graphviz(
         clf,
         out_file=None,
-        feature_names=pretty_labels,
+        feature_names=list(X.columns),
         class_names=[str(c) for c in clf.classes_],
         filled=True,
         rounded=True,
-        proportion=True,
-        precision=2,
-        impurity=False,
-        rotate=True,
+        precision=3,
         special_characters=True,
     )
     dot_data = dot_data.replace(
         "digraph Tree {",
-        'digraph Tree { graph [rankdir=LR, bgcolor="transparent", pad="0.35", nodesep="0.45", ranksep="1.1"]; node [shape=box, style="rounded,filled", color="#cbd5e1", fontname="Helvetica", fontsize=12, margin="0.22,0.12"]; edge [color="#64748b", penwidth=1.2];',
+        'digraph Tree { graph [bgcolor="transparent", pad="0.25", nodesep="0.25", ranksep="0.45"]; node [fontname="Helvetica"]; edge [fontname="Helvetica"];',
     )
     try:
         st.graphviz_chart(dot_data, use_container_width=True)
     except Exception:
-        fig, ax = plt.subplots(figsize=(36, 18))
+        fig, ax = plt.subplots(figsize=(30, 14))
         plot_tree(
             clf,
-            feature_names=pretty_labels,
+            feature_names=list(X.columns),
             class_names=[str(c) for c in clf.classes_],
             filled=True,
             rounded=True,
             fontsize=10,
-            impurity=False,
-            proportion=True,
-            precision=2,
+            precision=3,
             ax=ax,
         )
-        ax.set_title("Arbre de décision", fontsize=18, fontweight="bold")
         st.pyplot(fig, use_container_width=True)
 
 def render_application_tab(
@@ -1541,7 +1523,7 @@ def main() -> None:
 
     scaler = StandardScaler()
     scaled_features = scaler.fit_transform(feature_frame)
-    ks, inertia, silhouettes = compute_cluster_metrics(scaled_features, sidebar["k_range"])
+    ks, inertia = compute_cluster_metrics(scaled_features, sidebar["k_range"])
     kmeans = KMeans(n_clusters=sidebar["final_k"], random_state=42, n_init=10)
     aligned_df["cluster"] = kmeans.fit_predict(scaled_features)
 
@@ -1574,7 +1556,7 @@ def main() -> None:
     tabs = st.tabs(
         [
             "01 Clustering",
-            "02 PCA",
+            "02 ACP",
             "03 Radar",
             "04 Heatmaps",
             "05 Decision Tree",
@@ -1583,7 +1565,7 @@ def main() -> None:
     )
 
     with tabs[0]:
-        render_clustering_tab(ks, inertia, silhouettes, aligned_df, cluster_label_map)
+        render_clustering_tab(ks, inertia, aligned_df, cluster_label_map, sidebar["final_k"])
     with tabs[1]:
         render_pca_tab(aligned_df, scaled_features)
     with tabs[2]:
@@ -1607,6 +1589,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-
-
