@@ -777,6 +777,28 @@ def style_priority_cell(value: object) -> str:
     return palette.get(str(value), "")
 
 
+ROW_HEIGHT_PX = 35
+HEADER_HEIGHT_PX = 38
+
+
+def show_table(data, hide_index: bool = True, max_rows: int = 25) -> None:
+    """Affiche un tableau redimensionnable.
+
+    Le tableau s'ouvre en montrant toutes ses lignes (jusqu'à `max_rows`), sans barre de défilement.
+    L'utilisateur peut ensuite le redimensionner : glisser le coin inférieur droit pour changer
+    sa taille, glisser la bordure d'un en-tête pour élargir une colonne.
+    """
+    n_rows = len(data) if isinstance(data, pd.DataFrame) else len(data.data)  # DataFrame ou Styler
+    visible_rows = max(1, min(n_rows, max_rows))
+    height = HEADER_HEIGHT_PX + ROW_HEIGHT_PX * visible_rows + 3
+    st.dataframe(data, use_container_width=True, hide_index=hide_index, height=height)
+
+
+def show_table_hint() -> None:
+    st.caption("↘ Tableaux redimensionnables : glissez le coin inférieur droit d'un tableau pour changer sa taille, "
+               "ou la bordure d'un en-tête pour élargir une colonne.")
+
+
 def build_roadmap_styler(df: pd.DataFrame, gradient_column: str, gradient_cmap: str, priority_column: str) -> pd.io.formats.style.Styler:
     return (
         df.style
@@ -923,7 +945,7 @@ def render_overview(df: pd.DataFrame, selected_features: List[str], cluster_labe
                     unsafe_allow_html=True,
                 )
         st.markdown("### Niveaux de maturité")
-        st.dataframe(pd.DataFrame({"Cluster": list(cluster_labels.keys()), "Label": list(cluster_labels.values())}), use_container_width=True)
+        show_table(pd.DataFrame({"Cluster": list(cluster_labels.keys()), "Label": list(cluster_labels.values())}))
     with image_col:
         st.image(load_image(), caption="Modèle de Maturité Lean 4.0", use_container_width=True)
 
@@ -937,16 +959,13 @@ def render_clustering_tab(ks, inertia, df_clustered, cluster_label_map, final_k:
     st.subheader("Analyse de fiabilité (alpha de Cronbach)")
     st.success(f"Cronbach's Alpha global (toutes les sous-dimensions) : {CRONBACH_GLOBAL:.3f} — cohérence interne excellente")
     st.caption(f"Test pilote sur 30 entreprises : alpha = {CRONBACH_PILOT:.3f}. Seuil d’acceptation par dimension : 0,7.")
-    st.dataframe(
+    show_table(
         pd.DataFrame(
             {
                 "Dimension": list(CRONBACH_DATA.keys()),
                 "Alpha de Cronbach": [f"{v['alpha']:.3f}" for v in CRONBACH_DATA.values()],
             }
-        ),
-        use_container_width=True,
-        hide_index=True,
-    )
+        ))
 
     st.subheader("Méthode du coude (Elbow)")
     fig, ax = plt.subplots(figsize=(8, 4.2))
@@ -973,7 +992,7 @@ def render_clustering_tab(ks, inertia, df_clustered, cluster_label_map, final_k:
         }
     )
     st.markdown("### Synthèse des clusters")
-    st.dataframe(summary_df, use_container_width=True)
+    show_table(summary_df)
 
 
 def build_pca_frame(df: pd.DataFrame) -> pd.DataFrame:
@@ -1225,7 +1244,8 @@ def render_application_tab(
         info_3.metric("Taille", entreprise.get("Taille entreprise ", "N/A"))
 
     st.markdown("### Scores de maturité par sous-dimension")
-    st.dataframe(company_dimension_table(entreprise, selected_features), use_container_width=True)
+    show_table_hint()
+    show_table(company_dimension_table(entreprise, selected_features))
 
     lean_cols = [col for col in df_clustered.columns if col.startswith("Lean_")]
     tech_cols = [col for col in df_clustered.columns if col.startswith("Tech_")]
@@ -1235,10 +1255,10 @@ def render_application_tab(
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("### Méthodes Lean déjà adoptées")
-        st.dataframe(pd.DataFrame({"Méthode Lean": lean_adopted or ["Aucune méthode Lean détectée"]}), use_container_width=True)
+        show_table(pd.DataFrame({"Méthode Lean": lean_adopted or ["Aucune méthode Lean détectée"]}))
     with col2:
         st.markdown("### Technologies Industrie 4.0 déjà adoptées")
-        st.dataframe(pd.DataFrame({"Technologie 4.0": tech_adopted or ["Aucune technologie détectée"]}), use_container_width=True)
+        show_table(pd.DataFrame({"Technologie 4.0": tech_adopted or ["Aucune technologie détectée"]}))
 
     entreprise_scaled = scaler.transform(entreprise[selected_features].values.reshape(1, -1))
     predicted_cluster = int(kmeans.predict(entreprise_scaled)[0])
@@ -1271,7 +1291,7 @@ def render_application_tab(
             }
         )
         st.markdown("### Référence utilisée pour le scénario final")
-        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+        show_table(comparison_df)
 
     scenario_key = determine_scenario(actual_organizational_label, predicted_dt)
     scenario = SCENARIO_TEXT[scenario_key]
@@ -1424,9 +1444,8 @@ def render_application_tab(
     if gap_df.empty:
         st.success("Aucun écart négatif détecté par rapport au cluster cible.")
     else:
-        st.dataframe(
+        show_table(
             build_roadmap_styler(gap_df, "Écart", "YlOrRd_r", "Priorité"),
-            use_container_width=True,
         )
 
     lean_cluster_mean = df_clustered.loc[df_clustered["cluster"] == next_cluster, lean_cols].mean()
@@ -1447,9 +1466,8 @@ def render_application_tab(
         if lean_df.empty:
             st.info("Aucune méthode Lean prioritaire à adopter.")
         else:
-            st.dataframe(
+            show_table(
                 build_roadmap_styler(lean_df, "Taux d'adoption dans le cluster cible", "Blues", "Priorité"),
-                use_container_width=True,
             )
 
     with tech_col:
@@ -1464,9 +1482,8 @@ def render_application_tab(
         if tech_df.empty:
             st.info("Aucune technologie prioritaire à adopter.")
         else:
-            st.dataframe(
+            show_table(
                 build_roadmap_styler(tech_df, "Taux d'adoption dans le cluster cible", "PuBu", "Priorité"),
-                use_container_width=True,
             )
 
     executive_lines = []
